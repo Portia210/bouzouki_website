@@ -26,8 +26,8 @@ for artist_library in artists_libraries:
         songs_library = os.listdir(artist_library_path)
         artist_dict = {}
         for song_library in songs_library:
-            if song_folder_exist(imported_json, artist_library, song_library):
-                continue
+            # if song_folder_exist(imported_json, artist_library, song_library):
+            #     continue
             song_library_path = os.path.join(artist_library_path, song_library)
             if os.path.isdir(song_library_path):
                 if not os.listdir(song_library_path):
@@ -36,18 +36,15 @@ for artist_library in artists_libraries:
                     continue
 
                 txt_file_path = os.path.join(song_library_path, f"{song_library} video link.txt")
+                print(txt_file_path)
                 if os.path.isfile(txt_file_path):
                     # Open the text file and print the URL
-                    with open("video link.txt", 'r', encoding="utf-8") as txt_file:
+                    with open(txt_file_path, 'r', encoding="utf-8") as txt_file:
                         # Skip the first line by calling readline()
                         link_line = txt_file.readlines()[1]
                         youtube_url = link_line.split(": ")[1]
-                        song_dict = {
-                            "demo_youtube_url": youtube_url,
-                            "youtube_video": "",
-                            "more_videos": ""
-                        }
-                        artist_dict[song_library] = song_dict
+                        imported_json[artist_library]["songs"][song_library]["demo_id"]= youtube_url.split("watch?v=")[1]
+                        # artist_dict[song_library] = song_dict
                 else:
                     print("No text file found in", txt_file_path)
             imported_json[artist_library] = artist_dict

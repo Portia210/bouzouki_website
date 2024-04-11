@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}My Top 10 Movies{% endblock %}
+
+{% block content %}
+
+<main>
+    <section id="artist-hero" class="bg-dark">
+        <div class="container  text-secondary">
+            <div class="row align-items-center g-lg-5 py-5">
+                <div class="col-lg-6 text-center text-lg-start d-flex justify-content-center">
+                    <div>
+
+                        <p class="col-lg-10 fs-4 text-secondary">Songs By</p>
+                        <h1 class="display-6 text-white lh-1 mb-3">{{artist_name}}</h1>
+                    </div>
+
+                </div>
+                <div class="col-md-10 mx-auto col-lg-6 d-flex justify-content-center">
+                    <div class="card shadow-sm" style="max-width: 300px">
+                        <img class="bd-placeholder-img card-img-top" src="{{artist_data['img_url']}}" alt="Thumbnail">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section id="songs-section">
+        <div class="container">
+            <div class="row align-items-center py-5">
+                <div class="col-lg-6 text-center text-lg-start d-flex justify-content-start">
+                    <div>
+                        <ul class="list-group list-group-flush">
+                            {% for key, song in artist_data["songs"].items() %}
+                            <li class="list-group-item d-flex justify-content-between px-3">{{key}} <a href="#" class="link-primary ms-3">view song</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                </div>
+                <div class="col-md-10 mx-auto col-lg-6 d-flex justify-content-center">
+                    <div style="max-width: 300px">
+                        <div id="iframe-song"></div>
+                        <div id="iframe-sheet"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+
+{% endblock %}

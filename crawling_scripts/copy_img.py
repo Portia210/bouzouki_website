@@ -9,20 +9,10 @@ with open('youtube_songs.json', 'r') as file:
     # Load the JSON data
     youtube_songs = json.load(file)
 
-for collection in collections:
-    artist_name = collection['title']  # Access the value associated with the 'href' key
-
-    if artist_name in youtube_songs:
-        youtube_songs[artist_name]["img_url"] = collection["img_url"]
-        # print(youtube_songs[artist_name]["img_url"])
-
-# for key, artist in youtube_songs.items():
-#     youtube_songs[key] = {
-#         "img_url": "",
-#         "songs": artist
-#     }
-
-
+for key, artist in youtube_songs.items():
+    for song_k, song in artist["songs"].items():
+        song["video_id"] = song["youtube_video"].split("watch?v=")[1]
+        song["demo_id"] = song["demo_youtube_url"].split("watch?v=")[1]
 
 # Write collections data to the JSON file
 with open("youtube_songs.json", "w") as file:
