@@ -46,11 +46,11 @@ def home():
     return render_template("index.html", all_artists=imported_json)
 
 
-@app.route("/artists/<artist_name>")
+@app.route("/artist/<artist_name>")
 def artist_songs(artist_name):
     artist_data = imported_json[artist_name]
 
-    return render_template("artist_songs.html", artist_name=artist_name, artist_data=artist_data)
+    return render_template("artist_songs.html", artist_data=artist_data)
 
 
 # @app.route('/edit/<string:movie_title>', methods=['GET', 'POST'])

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}My Top 10 Movies{% endblock %}
+{% block title %}All Artists{% endblock %}
 
 {% block content %}
 
@@ -30,7 +30,7 @@
                         <img class="bd-placeholder-img card-img-top" src="{{artist_data['img_url']}}" alt="Thumbnail">
 
                         <div class="card-body">
-                            <p class="card-text">{{key}}</p>
+                            <p class="card-text">{{artist_data["artist_en_name"]}}</p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="btn-group">
                                     <a href="{{url_for('artist_songs',  artist_name = key)}}" class="btn btn-sm btn-outline-primary">View songs</a>
