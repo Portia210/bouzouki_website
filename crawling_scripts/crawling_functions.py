@@ -22,7 +22,15 @@ def get_parameter_from_url(url, query="v"):
     v_value = query_params.get(query)
     return v_value[0] if v_value else None
 
-
+def replace_forbidden_chars(string)->str:
+    forbidden_chars = '<>:"/\\|?*'
+    cleaned_string = ''
+    for char in string:
+        if char in forbidden_chars:
+            cleaned_string += '_'
+        else:
+            cleaned_string += char
+    return cleaned_string
 def title_greek(input_str):
     words = input_str.split()
     modified_words = [word[0].upper() + word[1:].lower() for word in words]
@@ -49,6 +57,10 @@ def try_to_find_element(father_element: Union[WebDriver, WebElement], css_select
         return element
     except NoSuchElementException:
         print(error_text) if error_text else None
+        return None
+    except Exception as e:
+        # Handle other exceptions here
+        print("element no found")
         return None
 
 
@@ -78,9 +90,6 @@ def greekish_name(driver, json_file):
     # full_list
     def translate_all_keys(dictionary, new_key_name):
         """take dictionary and new kay name to return the translations"""
-        first_value = next(iter(dictionary.values()))
-        if first_value[new_key_name] != "":
-            return dictionary
         greek_list = "\n".join(dictionary.keys())
         text_area = driver.find_element(By.CSS_SELECTOR, "textarea#input")
         text_area.clear()
@@ -149,7 +158,7 @@ def youtube_id_for_artist(driver, json_file, artist_name):
     return artist_data
 
 
-def set_chrome_driver(download_dir="") ->WebDriver:
+def set_chrome_driver(download_dir=None) ->WebDriver:
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_experimental_option("detach", True)
     # chrome_options.add_argument('--headless')  # Enable headless mode
