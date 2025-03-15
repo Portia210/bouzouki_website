@@ -6,36 +6,52 @@
 
 <main>
 
+    <header class="py-3 mb-4 border-bottom">
+    <div class="container d-flex flex-wrap justify-content-center">
+      <a  class="d-flex align-items-center mb-3 mb-lg-0 me-lg-auto link-body-emphasis text-decoration-none">
+          <img class="bi me-2" width="50" height="50" src="{{ url_for('static', filename='img/logo2.png') }}" alt="">
+        <span class="fs-4">The Bouzouki Website</span>
+      </a>
+      <form class="row g-3">
+
+  <div class="col-auto">
+    <label for="inputPassword2" class="visually-hidden">Password</label>
+    <input type="text" class="form-control" id="inputPassword2" placeholder="search for song">
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-primary mb-3">search</button>
+  </div>
+</form>
+    </div>
+  </header>
     <section class="py-5 text-center container">
         <div class="row py-lg-3">
             <div class="col-lg-6 col-md-8 mx-auto">
-                <h1 class="fw-light">Bouzouki Website</h1>
+                <h1 class="fw-light">Discover the best greek music</h1>
                 <p class="lead text-muted">Here you'll find songs and sheet music of the most familiar bouzouki artists</p>
-<!--                <p>-->
-<!--                    <a href="#" class="btn btn-primary my-2">Main call to action</a>-->
-<!--                    <a href="#" class="btn btn-secondary my-2">Secondary action</a>-->
-<!--                </p>-->
+
             </div>
         </div>
     </section>
+
 
     <div class="album py-3 bg-light">
         <div class="container">
 
             <div class="row  row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3">
 
-                {% for key, artist_data in all_artists.items() %}
+                {% for artist in all_artists %}
                 <div class="col">
                     <div class="card shadow-sm" style="min-height: 320px; max-width: 230px">
-                        <img class="bd-placeholder-img card-img-top" src="{{artist_data['img_url']}}" alt="Thumbnail">
+                        <img class="bd-placeholder-img card-img-top" src="{{artist.img_url}}" alt="Thumbnail">
 
                         <div class="card-body">
-                            <p class="card-text">{{artist_data["artist_en_name"]}}</p>
+                            <p class="card-text">{{artist.en_name}}</p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="btn-group">
-                                    <a href="{{url_for('artist_songs',  artist_name = key)}}" class="btn btn-sm btn-outline-primary">View songs</a>
+                                    <a href="{{url_for('artist_songs',  artist_id = artist.artist_id)}}" class="btn btn-sm btn-outline-primary">View songs</a>
                                 </div>
-                                <small class="text-muted">{{ artist_data["songs"] | length }} songs</small>
+                                <small class="text-muted">{{ artist.number_of_songs}} songs</small>
                             </div>
                         </div>
                     </div>

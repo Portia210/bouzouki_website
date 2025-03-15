@@ -1,0 +1,32 @@
+    <!-- <script>
+        $(function() {
+            $("#search").autocomplete({
+                source: function(request, response) {
+                    $.ajax({
+                        url: "{{ url_for('search_songs') }}",
+                        dataType: "json",
+                        data: {
+                            term: request.term
+                        },
+                        success: function(data) {
+                            response(data);
+                        }
+                    });
+                },
+                minLength: 2,
+                select: function(event, ui) {
+                    window.location.href = "/artist/" + encodeURIComponent(ui.item.artist) + "#" + encodeURIComponent(ui.item.value.replace(/\s+/g, '-').toLowerCase());
+                }
+            });
+        });
+
+        // Scroll to the anchor if it exists
+        $(document).ready(function() {
+            if(window.location.hash) {
+                var anchor = decodeURIComponent(window.location.hash);
+                $('html, body').animate({
+                    scrollTop: $(anchor).offset().top
+                }, 1000);
+            }
+        });
+    </script> -->

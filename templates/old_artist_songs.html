@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{artist.en_name}}{% endblock %}
+{% block title %}{{artist_data["artist_en_name"]}}{% endblock %}
 
 {% block content %}
 
@@ -10,16 +10,14 @@
             <div class="row align-items-center g-lg-5 py-5">
                 <div class="col-lg-6 text-center text-lg-start d-flex justify-content-center">
                     <div>
-
                         <p class="col-lg-10 fs-4 text-secondary">Songs By</p>
-                        <h1 class="display-5 text-white lh-1 mb-3">{{artist.en_name}}</h1>
-                        <h4 class=" text-white lh-1 mb-3">{{artist.gr_name}}</h4>
+                        <h1 class="display-5 text-white lh-1 mb-3">{{artist_data["artist_en_name"]}}</h1>
+                        <h4 class=" text-white lh-1 mb-3">{{artist_data["artist_gr_name"]}}</h4>
                     </div>
-
                 </div>
                 <div class="col-md-10 mx-auto col-lg-6 d-flex justify-content-center">
                     <div class="card shadow-sm" style="max-width: 300px">
-                        <img class="bd-placeholder-img card-img-top" src="{{artist.img_url}}" alt="Thumbnail">
+                        <img class="bd-placeholder-img card-img-top" src="{{artist_data['img_url']}}" alt="Thumbnail">
                     </div>
                 </div>
             </div>
@@ -31,22 +29,19 @@
                 <div class="col-lg-6 mt-5 text-center text-lg-start d-flex flex-column justify-content-start">
                     <h4 class="lh-1 py-2">Artist Songs</h4>
                     <div class="scrollable-list">
-                        <ul class="list-group list-group-flush" style="max-height: 300px;">
-                            {% for song in artist.songs %}
-                            <li class="list-group-item d-flex justify-content-between ps-1 pe-3">{{ song.en_name }}
-                                <!-- <a href="#" class="link-primary ms-1" onclick="activateIframe('{{ song.en_name|safe }}', '{{song.video_id|safe}}', '{{song.demo_id |safe}}', '{{song.more_videos |safe}}', event); ">View
-                                    Song</a> -->
-                                    <a class="link-primary ms-1", href="https://www.youtube.com/watch?v={{song.video_id}}" >Watch video</a>
-                                    <a class="link-primary ms-1", href="https://www.youtube.com/watch?v={{song.demo_id}}" >Sheet Music</a>
+                        <ul class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                            {% for song_name, song in artist_data["songs"].items() %}
+                            <li id="{{ song['song_en_name'].replace(' ', '-').lower() }}" class="list-group-item d-flex justify-content-between ps-1 pe-3">
+                                {{ song["song_en_name"] }}
+                                <a href="#" class="link-primary ms-1"
+                                   onclick="activateIframe({{ song | tojson }}, event);">View Song</a>
                             </li>
                             {% endfor %}
                         </ul>
                     </div>
-
                 </div>
                 <div class="col-md-10 mx-auto col-lg-6 d-flex justify-content-center align-items-start">
                     <div>
-
                         <div class="my-3">
                             <h4 class="display-6 lh-1 py-2">Original Song</h4>
                             <iframe id="iframe-song"
@@ -58,7 +53,7 @@
                                     title="YouTube Video"
                                     loading="lazy"
                             ></iframe>
-                            <p><span id="song-name"></span><a id="more-videos" target="_blank"
+                            <p><span id="song_name"></span><a id="more-videos" target="_blank"
                                                               class="link-primary ms-2"
                                                               href="">Other Videos</a></p>
                         </div>
@@ -68,7 +63,7 @@
                                     width="500"
                                     height="315"
                                     frameborder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allow=" accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                     allowfullscreen
                                     title="YouTube Video"
                                     loading="lazy"
@@ -79,30 +74,43 @@
             </div>
         </div>
     </section>
-
 </main>
 
 <script>
-    function activateIframe(song_name, video_id, demo_id, more_videos, event) {
+    function activateIframe(song, event) {
         event.preventDefault();
-
         var song_iframe = document.getElementById('iframe-song');
         var sheet_iframe = document.getElementById('iframe-sheet');
         var more_results = document.getElementById('more-videos');
-        var song_name_elem = document.getElementById('song-name');
+        var song_name_elem = document.getElementById('song_name');
 
         // Replace the iframe source with the specified demo ID
-        more_results.href = more_videos;
-        song_name_elem.textContent = song_name;
-        replaceIframeContent(song_iframe, 'https://www.youtube.com/embed/' + video_id);
-        replaceIframeContent(sheet_iframe, 'https://www.youtube.com/embed/' + demo_id);
+        more_results.href = song.more_videos;
+        song_name_elem.textContent = song.song_en_name;
+        replaceIframeContent(song_iframe, 'https://www.youtube.com/embed/' + song["video_id"]);
+        replaceIframeContent(sheet_iframe, 'https://www.youtube.com/embed/' + song["demo_id"]);
     }
+
     function replaceIframeContent(iframe, newSrc) {
-    iframe.contentWindow.location.replace(newSrc);
+        iframe.contentWindow.location.replace(newSrc);
     }
 
+    var firstSong = Object.values({{artist_data["songs"]|tojson}})[0];
+    activateIframe(firstSong, new Event('click'));
 
+    // Scroll to the anchor if it exists
+    window.onload = function() {
+        if(window.location.hash) {
+            var anchor = decodeURIComponent(window.location.hash);
+            var element = document.querySelector(anchor);
+            if(element) {
+                element.scrollIntoView({behavior: "smooth"});
+                // Activate the iframe for the selected song
+                var songData = JSON.parse(element.querySelector('a').getAttribute('onclick').match(/activateIframe\((.*?),/)[1]);
+                activateIframe(songData, new Event('click'));
+            }
+        }
+    }
 </script>
-
 
 {% endblock %}

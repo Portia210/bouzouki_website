@@ -22,7 +22,8 @@ def get_parameter_from_url(url, query="v"):
     v_value = query_params.get(query)
     return v_value[0] if v_value else None
 
-def replace_forbidden_chars(string)->str:
+
+def replace_forbidden_chars(string) -> str:
     forbidden_chars = '<>:"/\\|?*'
     cleaned_string = ''
     for char in string:
@@ -31,6 +32,8 @@ def replace_forbidden_chars(string)->str:
         else:
             cleaned_string += char
     return cleaned_string
+
+
 def title_greek(input_str):
     words = input_str.split()
     modified_words = [word[0].upper() + word[1:].lower() for word in words]
@@ -127,12 +130,10 @@ def greekish_name(driver, json_file):
 def youtube_id_for_artist(driver, json_file, artist_name):
     artist_data = json_file[artist_name]
     for song_name, song_data in artist_data["songs"].items():
-        if ("video_id" in song_data and song_data["video_id"] != ""
-                and song_data["video_id"] != song_data["demo_id"]):
+        if song_data["video_id"] != "" and song_data["updated"] == "y":
             continue
 
-        youtube_query = f"{artist_data["artist_gr_name"]} {song_name}".replace(" ", "+")
-        youtube_request_url = f"https://www.youtube.com/results?search_query={youtube_query}&sp=CAM%253D"
+        youtube_request_url = song_data["more_videos"]
         driver.get(youtube_request_url)
         time.sleep(0.2)
         renderer_first_element = wait_for_element(driver, "ytd-video-renderer")
@@ -152,13 +153,13 @@ def youtube_id_for_artist(driver, json_file, artist_name):
                 continue
             else:
                 song_data["video_id"] = video_id
-                song_data["more_videos"] = youtube_request_url
+                song_data["updated"] = "y"
                 break
 
     return artist_data
 
 
-def set_chrome_driver(download_dir=None) ->WebDriver:
+def set_chrome_driver(download_dir=None) -> WebDriver:
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_experimental_option("detach", True)
     # chrome_options.add_argument('--headless')  # Enable headless mode
