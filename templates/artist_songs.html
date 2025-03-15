@@ -36,8 +36,12 @@
                             <li class="list-group-item d-flex justify-content-between ps-1 pe-3">{{ song.en_name }}
                                 <!-- <a href="#" class="link-primary ms-1" onclick="activateIframe('{{ song.en_name|safe }}', '{{song.video_id|safe}}', '{{song.demo_id |safe}}', '{{song.more_videos |safe}}', event); ">View
                                     Song</a> -->
-                                    <a class="link-primary ms-1", href="https://www.youtube.com/watch?v={{song.video_id}}" >Watch video</a>
-                                    <a class="link-primary ms-1", href="https://www.youtube.com/watch?v={{song.demo_id}}" >Sheet Music</a>
+                                <div class="ms-auto">
+                                    <a class="link-primary ms-1" ,
+                                        href="https://www.youtube.com/watch?v={{song.video_id}}">Watch video</a>
+                                    <a class="link-primary ms-1" ,
+                                        href="https://www.youtube.com/watch?v={{song.demo_id}}">Sheet Music</a>
+                                </div>
                             </li>
                             {% endfor %}
                         </ul>
@@ -49,30 +53,17 @@
 
                         <div class="my-3">
                             <h4 class="display-6 lh-1 py-2">Original Song</h4>
-                            <iframe id="iframe-song"
-                                    width="500"
-                                    height="315"
-                                    frameborder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowfullscreen
-                                    title="YouTube Video"
-                                    loading="lazy"
-                            ></iframe>
-                            <p><span id="song-name"></span><a id="more-videos" target="_blank"
-                                                              class="link-primary ms-2"
-                                                              href="">Other Videos</a></p>
+                            <iframe id="iframe-song" width="500" height="315" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen title="YouTube Video" loading="lazy"></iframe>
+                            <p><span id="song-name"></span><a id="more-videos" target="_blank" class="link-primary ms-2"
+                                    href="">Other Videos</a></p>
                         </div>
                         <div class="my-3">
                             <h4 class="display-6 lh-1 py-2">Sheet Music</h4>
-                            <iframe id="iframe-sheet"
-                                    width="500"
-                                    height="315"
-                                    frameborder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowfullscreen
-                                    title="YouTube Video"
-                                    loading="lazy"
-                            ></iframe>
+                            <iframe id="iframe-sheet" width="500" height="315" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen title="YouTube Video" loading="lazy"></iframe>
                         </div>
                     </div>
                 </div>
@@ -98,7 +89,7 @@
         replaceIframeContent(sheet_iframe, 'https://www.youtube.com/embed/' + demo_id);
     }
     function replaceIframeContent(iframe, newSrc) {
-    iframe.contentWindow.location.replace(newSrc);
+        iframe.contentWindow.location.replace(newSrc);
     }
 
 

@@ -49,7 +49,7 @@
                             <p class="card-text">{{artist.en_name}}</p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="btn-group">
-                                    <a href="{{url_for('artist_songs',  artist_id = artist.artist_id)}}" class="btn btn-sm btn-outline-primary">View songs</a>
+                                    <a href="{{url_for('artist_songs',  artist_name = artist.en_name)}}" class="btn btn-sm btn-outline-primary">View songs</a>
                                 </div>
                                 <small class="text-muted">{{ artist.number_of_songs}} songs</small>
                             </div>
