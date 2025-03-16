@@ -29,8 +29,8 @@
     <section id="songs-section">
         <div class="container-fluid px-md-3">
             <div class="row py-3 py-md-4 w-100">
-                <div class="col-md-6 text-center text-lg-start d-flex justify-content-between">
-                    <div class="scrollable-list w-100" style="max-height: 680px; overflow-y: auto;" >
+                <div class="col-md-6 text-center text-lg-start d-flex justify-content-between pe-0" style="max-height: 680px; overflow-y: auto;">
+                    <div class="scrollable-list w-100" >
                         <ul class="list-group list-group-flush" >
                             {% for song in artist.songs %}
                             <li class="list-group-item d-flex justify-content-between ps-1 pe-1">
@@ -40,7 +40,7 @@
                                 </span>
                                 <div class="ms-auto" style="min-width: 100px;">
                                     <button type="button" id="activate-iframe"
-                                        class="d-none d-md-block btn btn-secondary" style="cursor: pointer;"
+                                        class="d-none d-md-block btn btn-outline-info" style="cursor: pointer;"
                                         target="_blank" data-song-name="{{ song.en_name }}"
                                         data-demo-id="https://www.youtube.com/embed/{{ song.demo_id }}" ,
                                         data-video-id="https://www.youtube.com/embed/{{ song.video_id }}"
@@ -48,10 +48,10 @@
                                         Videos
                                     </button>
                                     <div class="d-flex flex-column flex-sm-row d-block d-md-none">
-                                        <a class="link-primary ms-1 mb-2 mb-sm-0"
-                                            href="https://www.youtube.com/watch?v={{ song.video_id }}">Watch video</a>
-                                        <a class="link-primary ms-1"
-                                            href="https://www.youtube.com/watch?v={{ song.demo_id }}">Sheet Music</a>
+                                        <button class="btn btn-outline-primary me-sm-3 mb-2 mb-sm-0"
+                                            href="https://www.youtube.com/watch?v={{ song.video_id }}">Watch video</button>
+                                        <button class="btn btn-outline-info"
+                                            href="https://www.youtube.com/watch?v={{ song.demo_id }}">Sheet Music</button>
                                     </div>
                                 </div>
                             </li>
