@@ -73,7 +73,7 @@ def view_song(song_name):
     if not song:
         return "Song not found", 404  # In case the song is not found
 
-    return render_template("artist.html", artist=artist_obj, song=song)
+    return render_template("song_details.html", artist=artist_obj, song=song)
 
 
 @app.route("/images/<artist_name>")
