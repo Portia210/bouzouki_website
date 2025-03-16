@@ -40,25 +40,35 @@ def get_images_with_driver():
 
     automation = Automation()
     driver = automation.start_chrome_driver()
-    for artist in artists:
-        # get the artist image from wikipedia
-        google_imgs_url = f"https://www.google.com/search?hl=en&tbm=isch&q={artist}"
-        wikipedia_url = f"https://el.wikipedia.org/w/index.php?fulltext=1&search={artist}&ns0=1"
-        driver.get(wikipedia_url)
+    patreon_url = "https://www.patreon.com/c/partitourabouz/collections"
+    driver.get(patreon_url)
+    input("Press Enter to continue...")
+    artists_cards = driver.find_elements(By.CSS_SELECTOR, ".sc-ieecCq.hlVSeb")
+    images_dict = {}
+    for _ in range(len(artists_cards)):
+        artist_name_elem = automation.safe_find(By.CSS_SELECTOR, '.sc-ieecCq.hlVSeb [data-tag="box-collection-title-href"]',0.2)
+        if artist_name_elem:
+            artist_name = artist_name_elem.text
+            artist_img_elem = automation.safe_find(By.CSS_SELECTOR, '.sc-ieecCq.hlVSeb [data-tag="box-collection-thumbnail"]',0.2)
+            # get background-img url from artist_img_elem
+            artist_img_url = artist_img_elem.value_of_css_property("background-image")
+            if artist_img_url:
+                artist_img_url = artist_img_url.replace('url("', "").replace('")', "")
+                images_dict[artist_name] = artist_img_url
 
-        time.sleep(2)
-        input("Press Enter to continue...")
-        # Get the first image
-        first_img = automation.safe_find(By.CSS_SELECTOR, ".infobox img", 1)
-        if first_img:
-            src = first_img.get_attribute("src")
-            driver.get(src)
-            img = driver.find_element(By.CSS_SELECTOR, 'img').screenshot_as_png
+    for artist_name, artist_img_url in images_dict.items():
+        try:
+            driver.get(artist_img_url)
+            driver.find_element(By.CSS_SELECTOR, "img").screenshot_as_png(f"images/{artist_name}.png")
+            # with open (f"images/{artist_name}.png", "rb") as file:
+            #     img = file.read()
+            # store_img_in_db(img, db, table, artist_name)
+        except Exception as e:
+            print(e)
+            continue
 
-            with open(f"{artist}.png", "wb") as file:
-                file.write(img)
-            # Store the image in the database
-            store_img_in_db(f"{artist}.png", db, table, artist)
+
+
 
 
 def delete_images():

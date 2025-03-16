@@ -27,7 +27,7 @@
                 {% for artist in all_artists %}
                 <div class="col">
                     <div class="card shadow-sm" style="min-height: 320px; max-width: 230px">
-                        <img class="bd-placeholder-img card-img-top" src="{{artist.img_url}}" alt="Thumbnail">
+                        <img class="bd-placeholder-img card-img-top" src="{{ url_for('images', artist_name = artist.en_name) }}" alt="Thumbnail">
 
                         <div class="card-body">
                             <p class="card-text">{{artist.en_name}}</p>

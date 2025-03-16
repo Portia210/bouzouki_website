@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from flask_bootstrap import Bootstrap5
 from classes import import_db
 from dotenv import load_dotenv
+from io import BytesIO
 import os
 load_dotenv()
 
@@ -75,9 +76,18 @@ def view_song(song_name):
     return render_template("song_details.html", artist=artist_obj, song=song)
 
 
+@app.route("/images/<artist_name>")
+def images(artist_name):
+    print(artist_name)
+    artist = next((artist for artist in all_artists if artist.en_name == artist_name), None)
+    if artist:
+        return send_file(BytesIO(artist.artist_img), mimetype='image/png')
+    else:
+        return "Artist not found", 404
 
-# if __name__ == '__main__':
-#     app.run()
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Get PORT from environment
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
+#     port = int(os.environ.get("PORT", 5000))  # Get PORT from environment
+#     app.run(host="0.0.0.0", port=port)
+
+# src="{{ url_for('image', artist_img=artist.artist_img) }}"

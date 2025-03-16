@@ -7,8 +7,8 @@
 <main>
     <section id="artist-hero" class="bg-dark">
         <div class="container  text-secondary">
-            <div class="row align-items-center g-lg-5 py-5">
-                <div class="col-lg-6 text-center text-lg-start d-flex justify-content-center">
+            <div class="g-lg-5 py-5 d-flex flex-column flex-md-row justify-content-center">
+                <div class="col-lg-6 col-md-6 text-lg-start d-flex justify-content-center">
                     <div>
 
                         <p class="col-lg-10 fs-4 text-secondary">Songs By</p>
@@ -17,9 +17,9 @@
                     </div>
 
                 </div>
-                <div class="col-md-10 mx-auto col-lg-6 d-flex justify-content-center">
-                    <div class="card shadow-sm" style="max-width: 300px">
-                        <img class="bd-placeholder-img card-img-top" src="{{artist.img_url}}" alt="Thumbnail">
+                <div class="col-md-6 mx-auto col-lg-6 d-flex justify-content-center">
+                    <div class="card shadow-sm border-0 d-flex justify-content-center" style="max-width: 300px">
+                        <img class="bd-placeholder-img card-img" src="{{ url_for('images', artist_name=artist.en_name) }}" alt="Thumbnail">
                     </div>
                 </div>
             </div>
@@ -27,25 +27,27 @@
     </section>
     <section id="songs-section">
         <div class="container">
-            <div class="row align-items-start py-5">
+            <div class="row align-items-start py-2 py-md-5">
                 <div class="col-lg-6 mt-5 text-center text-lg-start d-flex flex-column justify-content-start">
                     <h4 class="lh-1 py-2">Artist Songs</h4>
                     <div class="scrollable-list">
                         <ul class="list-group list-group-flush" style="max-height: 300px;">
                             {% for song in artist.songs %}
-                            <li class="list-group-item d-flex justify-content-between ps-1 pe-3">{{ song.en_name }}
-                                <!-- <a href="#" class="link-primary ms-1" onclick="activateIframe('{{ song.en_name|safe }}', '{{song.video_id|safe}}', '{{song.demo_id |safe}}', '{{song.more_videos |safe}}', event); ">View
-                                    Song</a> -->
-                                <div class="ms-auto">
-                                    <a class="link-primary ms-1" ,
-                                        href="https://www.youtube.com/watch?v={{song.video_id}}">Watch video</a>
-                                    <a class="link-primary ms-1" ,
-                                        href="https://www.youtube.com/watch?v={{song.demo_id}}">Sheet Music</a>
+                            <li class="list-group-item d-flex justify-content-between ps-1 pe-1">
+                                <span class="text-start">
+                                    {{ song.en_name }}
+                                </span>
+                                <div class="ms-auto" style="min-width: 100px;">
+                                    <div class="d-flex flex-column flex-sm-row">
+                                        <a class="link-primary ms-1" href="https://www.youtube.com/watch?v={{ song.video_id }}">Watch video</a>
+                                        <a class="link-primary ms-1" href="https://www.youtube.com/watch?v={{ song.demo_id }}">Sheet Music</a>
+                                    </div>
                                 </div>
                             </li>
                             {% endfor %}
                         </ul>
                     </div>
+                    
 
                 </div>
                 <div class="col-md-10 mx-auto col-lg-6 d-flex justify-content-center align-items-start">

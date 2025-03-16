@@ -19,7 +19,7 @@
                 </div>
                 <div class="col-md-10 mx-auto col-lg-6 d-flex justify-content-center">
                     <div class="card shadow-sm" style="max-width: 300px">
-                        <img class="bd-placeholder-img card-img-top" src="{{artist.img_url}}" alt="Thumbnail">
+                        <img class="bd-placeholder-img card-img-top" src="{{ url_for('images', artist_name = artist.en_name) }}" alt="Thumbnail">
                     </div>
                 </div>
             </div>
