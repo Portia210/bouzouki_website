@@ -3,6 +3,7 @@ from flask_bootstrap import Bootstrap5
 from classes import import_db
 from dotenv import load_dotenv
 import os
+from waitress import serve
 load_dotenv()
 
 app = Flask(__name__)
@@ -75,5 +76,7 @@ def view_song(song_name):
     return render_template("song_details.html", artist=artist_obj, song=song)
 
 
+# if __name__ == '__main__':
+#     app.run(debug=True)
 if __name__ == '__main__':
-    app.run(debug=True)
+    serve(app, host='0.0.0.0', port=5000)
