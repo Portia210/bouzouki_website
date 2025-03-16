@@ -42,3 +42,4 @@ waitress==3.0.2
 Werkzeug==3.0.0
 wsproto==1.2.0
 WTForms==3.0.1
+gunicorn==20.1.0
