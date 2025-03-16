@@ -6,29 +6,13 @@
 
 <main>
 
-    <header class="py-3 mb-4 border-bottom">
-    <div class="container d-flex flex-wrap justify-content-center">
-      <a  class="d-flex align-items-center mb-3 mb-lg-0 me-lg-auto link-body-emphasis text-decoration-none">
-          <img class="bi me-2" width="50" height="50" src="{{ url_for('static', filename='img/logo2.png') }}" alt="">
-        <span class="fs-4">The Bouzouki Website</span>
-      </a>
-      <form class="row g-3">
 
-  <div class="col-auto">
-    <label for="inputPassword2" class="visually-hidden">Password</label>
-    <input type="text" class="form-control" id="inputPassword2" placeholder="search for song">
-  </div>
-  <div class="col-auto">
-    <button type="submit" class="btn btn-primary mb-3">search</button>
-  </div>
-</form>
-    </div>
-  </header>
     <section class="py-5 text-center container">
         <div class="row py-lg-3">
             <div class="col-lg-6 col-md-8 mx-auto">
                 <h1 class="fw-light">Discover the best greek music</h1>
-                <p class="lead text-muted">Here you'll find songs and sheet music of the most familiar bouzouki artists</p>
+                <p class="lead text-muted">Here you'll find songs and sheet music of the most familiar bouzouki artists
+                </p>
 
             </div>
         </div>
@@ -49,7 +33,8 @@
                             <p class="card-text">{{artist.en_name}}</p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="btn-group">
-                                    <a href="{{url_for('artist_songs',  artist_name = artist.en_name)}}" class="btn btn-sm btn-outline-primary">View songs</a>
+                                    <a href="{{url_for('artist_songs',  artist_name = artist.en_name)}}"
+                                        class="btn btn-sm btn-outline-primary">View songs</a>
                                 </div>
                                 <small class="text-muted">{{ artist.number_of_songs}} songs</small>
                             </div>

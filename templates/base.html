@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,19 +17,58 @@
         }
     </style>
 </head>
+
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">Greek Music Library</a>
-            <div class="d-flex">
-                <input id="search" class="form-control me-2" type="search" placeholder="Search songs" aria-label="Search">
-            </div>
+    <header class="py-3 mb-5 border-bottom">
+        <div class="container d-flex flex-wrap justify-content-center align-items-center">
+            <!-- Logo and Title -->
+            <a class="d-flex align-items-center mb-3 mb-lg-0 me-lg-auto link-body-emphasis text-decoration-none">
+                <img class="bi me-2" width="50" height="50" src="{{ url_for('static', filename='img/logo2.png') }}"
+                    alt="">
+                <span class="fs-4">Sheet Music For Rebetico Songs</span>
+            </a>
+
+            <!-- Search Form view the resulst under the input-->
+            <form class="d-flex justify-content-center align-items-center g-3">
+                <input type="text" class="form-control me-2" id="songSeach" placeholder="Search for song">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <!-- view the reuslts here -->
+                <div id="searchResults"></div>
+            </form>
         </div>
-    </nav>
+    </header>
+
+
 
     {% block content %}{% endblock %}
 
     {{ bootstrap.load_js() }}
+    <script>
+        // seach for songs on typing and show the results get method to /search route, the url should be with the query parameter
+        $(document).ready(function () {
+            $("#songSeach").autocomplete({
+                source: function (request, response) {
+                    $.ajax({
+                        url: "/search",
+                        type: "GET",
+                        data: {
+                            term: request.term
+                        },
+                        success: function (data) {
+                            response(data);  // Show search results
+                        }
+                    });
+                },
+                minLength: 2,
+                select: function (event, ui) {
+                    // Redirect to the song's detailed page
+                    window.location.href = ui.item.url;  // Use the 'url' returned by the server
+                }
+            });
+        });
+
+    </script>
 
 </body>
+
 </html>
