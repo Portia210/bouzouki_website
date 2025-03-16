@@ -7,11 +7,11 @@
 <main>
 
 
-    <section class="py-5 text-center container">
+    <section class="py-2 py-sm-3 text-center container">
         <div class="row py-lg-3">
             <div class="col-lg-6 col-md-8 mx-auto">
-                <h1 class="fw-light">Discover the best greek music</h1>
-                <p class="lead text-muted">Here you'll find songs and sheet music of the most familiar bouzouki artists
+                <!-- <h1 class="fw-light">Discover the best greek music</h1> -->
+                <p class="lead text-muted m-0">Sheet music for the beloved Rebetiko songs.
                 </p>
 
             </div>
@@ -20,14 +20,14 @@
 
 
     <div class="album py-3 bg-light">
-        <div class="container">
+        <div class="container px-0 px-sm-auto">
 
-            <div class="row  row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3">
+            <div class="row  row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3 ">
 
                 {% for artist in all_artists %}
-                <div class="col">
-                    <div class="card shadow-sm" style="min-height: 320px; max-width: 230px">
-                        <img class="bd-placeholder-img card-img-top" src="{{ url_for('images', artist_name = artist.en_name) }}" alt="Thumbnail">
+                <div class="col d-flex justify-content-center">
+                    <div class="card shadow-sm" style="height: 320px; width: 220px">
+                        <img class="bd-placeholder-img card-img-top"  style="height: 205px; object-fit: cover; width: 100%;" src="{{ url_for('images', artist_name = artist.en_name) }}" alt="Thumbnail">
 
                         <div class="card-body">
                             <p class="card-text">{{artist.en_name}}</p>

@@ -7,7 +7,7 @@
 <main>
     <section id="artist-hero" class="bg-dark">
         <div class="container  text-secondary">
-            <div class="g-lg-5 py-5 d-flex flex-column flex-md-row justify-content-center">
+            <div class="g-lg-5 py-3 py-md-5 d-flex flex-column flex-md-row justify-content-center">
                 <div class="col-lg-6 col-md-6 text-lg-start d-flex justify-content-center">
                     <div>
 
@@ -19,53 +19,84 @@
                 </div>
                 <div class="col-md-6 mx-auto col-lg-6 d-flex justify-content-center">
                     <div class="card shadow-sm border-0 d-flex justify-content-center" style="max-width: 300px">
-                        <img class="bd-placeholder-img card-img" src="{{ url_for('images', artist_name=artist.en_name) }}" alt="Thumbnail">
+                        <img class="bd-placeholder-img card-img" style="height: 260px; width: 220px; object-fit: cover;"
+                            src="{{ url_for('images', artist_name=artist.en_name) }}" alt="Thumbnail">
                     </div>
                 </div>
             </div>
         </div>
     </section>
     <section id="songs-section">
-        <div class="container">
-            <div class="row align-items-start py-2 py-md-5">
-                <div class="col-lg-6 mt-5 text-center text-lg-start d-flex flex-column justify-content-start">
-                    <h4 class="lh-1 py-2">Artist Songs</h4>
-                    <div class="scrollable-list">
-                        <ul class="list-group list-group-flush" style="max-height: 300px;">
+        <div class="container-fluid px-md-3">
+            <div class="row py-3 py-md-4 w-100">
+                <div class="col-md-6 text-center text-lg-start d-flex justify-content-between">
+                    <div class="scrollable-list w-100" style="max-height: 680px; overflow-y: auto;" >
+                        <ul class="list-group list-group-flush" >
                             {% for song in artist.songs %}
                             <li class="list-group-item d-flex justify-content-between ps-1 pe-1">
                                 <span class="text-start">
+                                    <!-- a to activate the iframe -->
                                     {{ song.en_name }}
                                 </span>
                                 <div class="ms-auto" style="min-width: 100px;">
-                                    <div class="d-flex flex-column flex-sm-row">
-                                        <a class="link-primary ms-1" href="https://www.youtube.com/watch?v={{ song.video_id }}">Watch video</a>
-                                        <a class="link-primary ms-1" href="https://www.youtube.com/watch?v={{ song.demo_id }}">Sheet Music</a>
+                                    <button type="button" id="activate-iframe"
+                                        class="d-none d-md-block btn btn-secondary" style="cursor: pointer;"
+                                        target="_blank" data-song-name="{{ song.en_name }}"
+                                        data-demo-id="https://www.youtube.com/embed/{{ song.demo_id }}" ,
+                                        data-video-id="https://www.youtube.com/embed/{{ song.video_id }}"
+                                        data-more-videos=" http://www.youtube.com/results?search_query={{ song.gr_name }}">See
+                                        Videos
+                                    </button>
+                                    <div class="d-flex flex-column flex-sm-row d-block d-md-none">
+                                        <a class="link-primary ms-1 mb-2 mb-sm-0"
+                                            href="https://www.youtube.com/watch?v={{ song.video_id }}">Watch video</a>
+                                        <a class="link-primary ms-1"
+                                            href="https://www.youtube.com/watch?v={{ song.demo_id }}">Sheet Music</a>
                                     </div>
                                 </div>
                             </li>
                             {% endfor %}
                         </ul>
                     </div>
-                    
+
 
                 </div>
-                <div class="col-md-10 mx-auto col-lg-6 d-flex justify-content-center align-items-start">
+                <div class="d-none d-md-block col-md-6">
                     <div>
 
                         <div class="my-3">
-                            <h4 class="display-6 lh-1 py-2">Original Song</h4>
-                            <iframe id="iframe-song" width="500" height="315" frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen title="YouTube Video" loading="lazy"></iframe>
-                            <p><span id="song-name"></span><a id="more-videos" target="_blank" class="link-primary ms-2"
-                                    href="">Other Videos</a></p>
+                            <h4 class="display-6 lh-1 pb-3">Original Song</h4>
+                            <div class="container" style="max-width: 500px; width: 100%; margin: 0 auto;">
+                                <div class="ratio"
+                                    style="position: relative; width: 100%; height: 0; padding-bottom: 56.25%; overflow: hidden;">
+                                    <iframe id="iframe-demo" src="https://www.youtube.com/embed/example-video-id"
+                                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                                        frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowfullscreen title="YouTube Video" loading="lazy">
+                                    </iframe>
+                                </div>
+                            </div>
+
                         </div>
                         <div class="my-3">
                             <h4 class="display-6 lh-1 py-2">Sheet Music</h4>
-                            <iframe id="iframe-sheet" width="500" height="315" frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen title="YouTube Video" loading="lazy"></iframe>
+                            <div class="container" style="max-width: 500px; width: 100%; margin: 0 auto;">
+                                <div class="ratio"
+                                    style="position: relative; width: 100%; height: 0; padding-bottom: 56.25%; overflow: hidden;">
+                                    <iframe id="iframe-video" src="https://www.youtube.com/embed/example-video-id"
+                                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                                        frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowfullscreen title="YouTube Video" loading="lazy">
+                                    </iframe>
+                                </div>
+                            </div>
+                            <p>
+                                <a id="more-videos" target="_blank" class="link-primary ms-2" href="">Youtube Videos
+                                    for</a>
+                                <span id="song-name" class="ms-2"></span>
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -76,25 +107,24 @@
 </main>
 
 <script>
-    function activateIframe(song_name, video_id, demo_id, more_videos, event) {
-        event.preventDefault();
+    // Use event delegation to listen for clicks on dynamically added elements
+    document.addEventListener('click', function (event) {
+        // Check if the clicked element is an anchor tag with the specified id
+        if (event.target && event.target.id === 'activate-iframe') {
+            // Get the data attributes from the clicked element
+            const demoId = event.target.getAttribute('data-demo-id');
+            const videoId = event.target.getAttribute('data-video-id');
+            const moreVideos = event.target.getAttribute('data-more-videos');
+            const songName = event.target.getAttribute('data-song-name');
 
-        var song_iframe = document.getElementById('iframe-song');
-        var sheet_iframe = document.getElementById('iframe-sheet');
-        var more_results = document.getElementById('more-videos');
-        var song_name_elem = document.getElementById('song-name');
+            // Set the iframe sources and links based on the data attributes
 
-        // Replace the iframe source with the specified demo ID
-        more_results.href = more_videos;
-        song_name_elem.textContent = song_name;
-        replaceIframeContent(song_iframe, 'https://www.youtube.com/embed/' + video_id);
-        replaceIframeContent(sheet_iframe, 'https://www.youtube.com/embed/' + demo_id);
-    }
-    function replaceIframeContent(iframe, newSrc) {
-        iframe.contentWindow.location.replace(newSrc);
-    }
-
-
+            document.getElementById('song-name').innerText = songName;
+            document.getElementById('iframe-demo').src = demoId;
+            document.getElementById('iframe-video').src = videoId;
+            document.getElementById('more-videos').href = moreVideos;
+        }
+    });
 </script>
 
 
