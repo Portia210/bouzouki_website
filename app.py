@@ -86,8 +86,6 @@ def images(artist_name):
         return "Artist not found", 404
 
 if __name__ == '__main__':
-    app.run(debug=True)
-#     port = int(os.environ.get("PORT", 5000))  # Get PORT from environment
-#     app.run(host="0.0.0.0", port=port)
-
-# src="{{ url_for('image', artist_img=artist.artist_img) }}"
+    # app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Get PORT from environment
+    app.run(host="0.0.0.0", port=port)
