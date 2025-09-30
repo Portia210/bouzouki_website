@@ -104,6 +104,7 @@
 
 </main>
 
+
 <script>
     // Use event delegation to listen for clicks on dynamically added elements
     document.addEventListener('click', function (event) {
@@ -121,6 +122,15 @@
             document.getElementById('iframe-demo').src = demoId;
             document.getElementById('iframe-video').src = videoId;
             document.getElementById('more-videos').href = moreVideos;
+        }
+    });
+
+    // Automatically activate the first song when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstButton = document.querySelector('#activate-iframe');
+        if (firstButton) {
+            // Trigger click on the first "See Videos" button
+            firstButton.click();
         }
     });
 </script>

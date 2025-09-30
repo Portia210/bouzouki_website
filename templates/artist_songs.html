@@ -125,6 +125,15 @@
             document.getElementById('more-videos').href = moreVideos;
         }
     });
+
+    // Automatically activate the first song when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstButton = document.querySelector('#activate-iframe');
+        if (firstButton) {
+            // Trigger click on the first "See Videos" button
+            firstButton.click();
+        }
+    });
 </script>
 
 

@@ -10,6 +10,7 @@ class Artist:
 
     def __str__(self):
         return f"{self.gr_name} {self.en_name} {self.number_of_songs} {self.songs}"
+    
 class Song:
     def __init__(self, artist_name, en_name, gr_name, video_id, demo_id):
         self.artist_name = artist_name
