@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Error {{ error_code }} - Rebetiko Music{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="error-template">
+                <h1 class="display-1">{{ error_code }}</h1>
+                <h2 class="mb-3">{{ error_message }}</h2>
+
+                {% if error_code == 404 %}
+                    <p class="text-muted">The page or song you're looking for doesn't exist.</p>
+                    <div class="error-actions">
+                        <a href="/" class="btn btn-primary btn-lg">
+                            <span class="glyphicon glyphicon-home"></span>
+                            Go Home
+                        </a>
+                        <a href="javascript:history.back()" class="btn btn-secondary btn-lg">
+                            <span class="glyphicon glyphicon-arrow-left"></span>
+                            Go Back
+                        </a>
+                    </div>
+                {% elif error_code == 400 %}
+                    <p class="text-muted">The request contains invalid data.</p>
+                    <div class="error-actions">
+                        <a href="/" class="btn btn-primary btn-lg">
+                            <span class="glyphicon glyphicon-home"></span>
+                            Go Home
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Something went wrong on our end. Please try again later.</p>
+                    <div class="error-actions">
+                        <a href="/" class="btn btn-primary btn-lg">
+                            <span class="glyphicon glyphicon-home"></span>
+                            Go Home
+                        </a>
+                        <a href="javascript:location.reload()" class="btn btn-secondary btn-lg">
+                            <span class="glyphicon glyphicon-refresh"></span>
+                            Try Again
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
