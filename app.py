@@ -1,5 +1,8 @@
 from flask import Flask, render_template, request, jsonify, send_file, abort
 from flask_bootstrap import Bootstrap5
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_caching import Cache
 from classes import import_db
 from dotenv import load_dotenv
 from io import BytesIO
@@ -7,13 +10,33 @@ import os
 import re
 from urllib.parse import unquote
 from markupsafe import escape
-from werkzeug.exceptions import HTTPException
 from logger import logger
 load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv("FLASK_SECRET_KEY", "fallback_secret_key")
+
+# Require SECRET_KEY to be set in environment
+secret_key = os.getenv("FLASK_SECRET_KEY")
+if not secret_key:
+    logger.error("FLASK_SECRET_KEY environment variable not set")
+    raise RuntimeError("FLASK_SECRET_KEY environment variable is required for security")
+app.config['SECRET_KEY'] = secret_key
+
 Bootstrap5(app)
+
+# Configure caching
+cache = Cache(app, config={
+    'CACHE_TYPE': 'SimpleCache',
+    'CACHE_DEFAULT_TIMEOUT': 2592000  # 30 days in seconds
+})
+
+# Configure rate limiting
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 # Input validation functions
 def sanitize_route_param(param):
@@ -93,6 +116,7 @@ def artist_songs(artist_name):
 
 
 @app.route("/search", methods=["GET"])
+@limiter.limit("30 per minute")
 def search_songs():
     try:
         term = request.args.get("term")
@@ -172,6 +196,8 @@ def view_song(song_name):
 
 
 @app.route("/images/<artist_name>")
+@limiter.limit("100 per minute")  # Rate limit image requests to prevent abuse
+@cache.cached(timeout=2592000)  # Cache for 30 days
 def images(artist_name):
     logger.debug(f"Image request for artist: {artist_name}")
 
@@ -188,7 +214,17 @@ def images(artist_name):
 
     try:
         logger.debug(f"Serving image for: {sanitized_name}")
-        return send_file(BytesIO(artist.artist_img), mimetype='image/png')
+        # Add security headers for image serving
+        response = send_file(
+            BytesIO(artist.artist_img),
+            mimetype='image/png',
+            as_attachment=False,
+            download_name=f"{sanitized_name}.png"
+        )
+        response.headers['Content-Security-Policy'] = "default-src 'none'"
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['Cache-Control'] = 'public, max-age=2592000, immutable'  # Cache for 30 days
+        return response
     except Exception as e:
         logger.error(f"Error serving image for {artist_name}: {e}")
         abort(500)
