@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv("FLASK_SECRET_KEY", "fallback_secret_key")
 Bootstrap5(app)
 
-# Global variable to store all artists
+# Global variable to store all artists (loaded once at startup)
 all_artists = import_db()
 
 @app.route("/")
@@ -35,15 +35,13 @@ def search_songs():
     term = request.args.get("term")  # Get the search term from the query string
     if not term:
         return jsonify([])  # Return empty list if no term is provided
-    
+
     results = []
 
-    # Fetch all artists from the database
-    all_artists = import_db()
-    
+    # Use the global all_artists variable (no need to fetch from database again)
     if not all_artists:
         return jsonify([])  # Return empty list if no artists were found
-    
+
     for artist in all_artists:
         for song in artist.songs:
             # Check if the term is in either the English or Greek song name
@@ -53,23 +51,23 @@ def search_songs():
                     'value': song.en_name,
                     'url': f"/song/{song.en_name}"  # Redirect URL
                 })
-    
+
     return jsonify(results)
 
 
 @app.route("/song/<song_name>")
 def view_song(song_name):
-    # Fetch all artists from the database
-    all_artists = import_db()
-    
+    # Use the global all_artists variable (no need to fetch from database again)
+
     # Find the song from the list of artists
     song = None
+    artist_obj = None
     for artist in all_artists:
         for s in artist.songs:
             if s.en_name == song_name:
                 song = s
                 artist_obj = artist  # Keep track of the artist object
-    
+
     if not song:
         return "Song not found", 404  # In case the song is not found
 
