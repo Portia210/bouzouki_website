@@ -30,7 +30,7 @@
 
             <!-- Search Form view the resulst under the input-->
             <form class="d-flex justify-content-center align-items-center g-3">
-                <input type="text" class="form-control me-2" id="songSeach" placeholder="Search for song">
+                <input type="text" class="form-control me-2" id="songSearch" placeholder="Search for song">
                 <button type="submit" class="btn btn-primary">Search</button>
                 <!-- view the reuslts here -->
                 <div id="searchResults"></div>
@@ -46,7 +46,7 @@
     <script>
         // seach for songs on typing and show the results get method to /search route, the url should be with the query parameter
         $(document).ready(function () {
-            $("#songSeach").autocomplete({
+            $("#songSearch").autocomplete({
                 source: function (request, response) {
                     $.ajax({
                         url: "/search",
