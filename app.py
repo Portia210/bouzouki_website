@@ -108,7 +108,6 @@ def artist_songs(artist_name):
         abort(404)
 
     try:
-        logger.info(f"Serving artist page for: {sanitized_name}")
         return render_template("artist_songs.html", artist=artist)
     except Exception as e:
         logger.error(f"Error rendering artist page for {sanitized_name}: {e}")
@@ -188,7 +187,6 @@ def view_song(song_name):
         abort(404)
 
     try:
-        logger.info(f"Serving song page for: {sanitized_name}")
         return render_template("song_details.html", artist=artist_obj, song=song)
     except Exception as e:
         logger.error(f"Error rendering song page for {sanitized_name}: {e}")
@@ -199,8 +197,6 @@ def view_song(song_name):
 @limiter.limit("100 per minute")  # Rate limit image requests to prevent abuse
 @cache.cached(timeout=2592000)  # Cache for 30 days
 def images(artist_name):
-    logger.debug(f"Image request for artist: {artist_name}")
-
     # Sanitize the artist name parameter
     sanitized_name = sanitize_route_param(artist_name)
     if not sanitized_name:
@@ -213,7 +209,6 @@ def images(artist_name):
         abort(404)
 
     try:
-        logger.debug(f"Serving image for: {sanitized_name}")
         # Add security headers for image serving
         response = send_file(
             BytesIO(artist.artist_img),

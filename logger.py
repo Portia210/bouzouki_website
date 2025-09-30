@@ -2,6 +2,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 import pytz
 from datetime import datetime
+import os
 
 def setup_logger(name="logger", level=logging.DEBUG, log_file=None, app_timezone=None):
     """
@@ -53,8 +54,11 @@ def setup_logger(name="logger", level=logging.DEBUG, log_file=None, app_timezone
 
     return logger
 
-# Create default logger instance
-logger = setup_logger(name="logger", level=logging.INFO, log_file=None)
+# Create default logger instance with configurable level
+# Default to INFO for production, but allow override via LOG_LEVEL environment variable
+log_level_name = os.getenv("LOG_LEVEL", "INFO").upper()
+log_level = getattr(logging, log_level_name, logging.INFO)
+logger = setup_logger(name="logger", level=log_level, log_file=None)
 
 
 if __name__ == "__main__":
