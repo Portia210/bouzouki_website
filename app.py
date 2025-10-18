@@ -8,8 +8,7 @@ from dotenv import load_dotenv
 from io import BytesIO
 import os
 import re
-from urllib.parse import unquote
-from markupsafe import escape
+from urllib.parse import unquote, quote
 from logger import logger
 load_dotenv()
 
@@ -48,8 +47,8 @@ def sanitize_route_param(param):
     # URL decode the parameter
     param = unquote(param)
 
-    # Remove any potentially dangerous characters
-    param = re.sub(r'[<>"\'\/\\&]', '', param)
+    # Remove any potentially dangerous characters (allow apostrophes for song/artist names)
+    param = re.sub(r'[<>"\/\\&]', '', param)
 
     # Limit length to prevent DoS
     if len(param) > 200:
@@ -141,9 +140,9 @@ def search_songs():
                 if (sanitized_term.lower() in song.en_name.lower() or
                     sanitized_term.lower() in song.gr_name.lower()):
                     results.append({
-                        'label': escape(song.en_name),  # Escape output for security
-                        'value': escape(song.en_name),
-                        'url': f"/song/{song.en_name}"
+                        'label': song.en_name,  # Display original name with special characters
+                        'value': song.en_name,
+                        'url': f"/song/{quote(song.en_name)}"
                     })
 
                     # Limit results to prevent performance issues
