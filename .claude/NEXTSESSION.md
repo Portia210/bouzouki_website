@@ -8,7 +8,7 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
 
     ## 2026-11-14 — Railway deploy fixed and live
 - Changed: the Railway project `bouzouki-website` (service `web`, repo `Portia210/bouzouki_website`, branch master, auto-deploy on push) already existed but every deploy failed (Nixpacks `pip install uv==` bug; start command `python app.py` ran without the venv → `No module named 'dotenv'`). Service settings changed in Railway: builder RAILPACK, start `gunicorn app:app --bind 0.0.0.0:$PORT --workers 2`, healthcheck `/healthz`, restart ON_FAILURE, variable `TRUST_PROXY_HOPS=1` (`FLASK_SECRET_KEY` was already set).
-- Verified: deployment SUCCESS; live https://web-production-0f750.up.railway.app — pages, search, images (WebP), favicon, sitemap, CSP/HSTS headers, 404 all OK.
+- Verified: deployment SUCCESS; live https://bouzouki-rebetiko.up.railway.app — pages, search, images (WebP), favicon, sitemap, CSP/HSTS headers, 404 all OK.
 - NOT verified: YouTube embeds on the live domain in a real browser; page speed from Israel (service runs in us-west2, ~0.5 s per request from here); no gzip on responses.
 - Next: decide on a custom domain and whether to move the service to a European region.
 
