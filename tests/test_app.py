@@ -10,7 +10,7 @@ def test_pages_render(client, catalog):
     html = page.get_data(as_text=True)
     # one tabbed player: the lesson (demo_id) is the default, the original (video_id) is the other tab
     assert html.index('id="tab-lesson"') < html.index('id="tab-original"') and 'id="player-frame"' in html
-    assert f"watch?v={song.demo_id}" in html  # plain YouTube link, for videos that can't be embedded
+    assert "player-yt" not in html  # no separate "Open on YouTube" link; the blocked-video card has its own
     assert f'data-original="{song.video_id}"' in html and f'data-lesson="{song.demo_id}"' in html
     assert f'data-slug="{song.slug}"' in html
     # phone UX hooks used by artist.js: list first, player re-homed under the tapped song
@@ -79,7 +79,7 @@ def test_image_is_a_small_webp_thumbnail(client):
 def test_security_headers(client):
     h = client.get("/").headers
     csp = h["Content-Security-Policy"]
-    assert "frame-src https://www.youtube-nocookie.com" in csp
+    assert "frame-src 'self' https://www.youtube-nocookie.com" in csp
     assert "script-src 'self' https://www.youtube.com;" in csp and "unsafe-inline" not in csp
     assert h["X-Content-Type-Options"] == "nosniff"
 
@@ -124,3 +124,22 @@ def test_artist_song_search_looks_and_behaves_like_a_search_box(client, catalog)
     assert f'placeholder="Search {big.number_of_songs} songs"' in html
     small = min(catalog.artists, key=lambda a: a.number_of_songs)
     assert 'id="song-filter"' not in client.get(f"/artist/{small.slug}").get_data(as_text=True)
+
+
+def test_csp_lets_pages_embed_only_our_own_pdf_route_and_the_one_r2_host(monkeypatch):
+    from app import create_app
+
+    monkeypatch.delenv("R2_ACCOUNT_ID", raising=False)
+    csp = create_app(secret_key="k").test_client().get("/healthz").headers["Content-Security-Policy"]
+    assert "frame-src 'self' https://www.youtube-nocookie.com;" in csp and "r2.cloudflarestorage.com" not in csp
+    monkeypatch.setenv("R2_ACCOUNT_ID", "6daf8e703b03f08c2c085769971ca645")
+    csp = create_app(secret_key="k").test_client().get("/healthz").headers["Content-Security-Policy"]
+    assert "https://6daf8e703b03f08c2c085769971ca645.r2.cloudflarestorage.com;" in csp
+    monkeypatch.setenv("R2_ACCOUNT_ID", "x; script-src *")  # an env value must never be able to widen the policy
+    assert "script-src *" not in create_app(secret_key="k").test_client().get("/healthz").headers["Content-Security-Policy"]
+
+
+def test_artist_page_has_a_pdf_viewer_that_loads_nothing_until_opened(client, catalog):
+    html = client.get(f"/artist/{catalog.artists[0].slug}").get_data(as_text=True)
+    assert 'id="pdf-viewer" hidden' in html and 'id="pdf-newtab"' in html
+    assert '<iframe id="pdf-frame"' in html and "src=" not in html.split('<iframe id="pdf-frame"')[1].split(">")[0]

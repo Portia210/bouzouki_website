@@ -111,6 +111,47 @@
     var pdfBox = byId("player-pdfs");
     var pdfButtons = [[byId("pdf-sheet"), "sheet"], [byId("pdf-tab"), "tabPdf"]];
     var isAdmin = false;
+    var viewing = null;  // "sheet" | "tabPdf" while a PDF is shown in the page instead of the video
+    var viewer = byId("pdf-viewer");
+
+    // The PDF replaces the video in the same panel (it is too tall to sit next to it); the video tabs bring it back.
+    function openPdf(key) {
+        var row = current(), url = row && row.dataset[key];
+        if (!url) return;
+        viewing = key;
+        stopVideos();
+        frame.hidden = true;
+        byId("player-more").parentElement.hidden = true;
+        tabs.forEach(function (t) { t.setAttribute("aria-selected", "false"); });
+        byId("pdf-viewer-title").textContent = key === "sheet" ? "Sheet music" : "Tablature";
+        byId("pdf-newtab").href = url;
+        byId("pdf-frame").src = url;
+        viewer.hidden = false;
+        markPdfButtons();
+    }
+
+    function closePdf() {
+        if (!viewing) return;
+        viewing = null;
+        byId("pdf-frame").removeAttribute("src");  // stops loading and frees the viewer
+        viewer.hidden = true;
+        frame.hidden = false;
+        markPdfButtons();
+    }
+
+    function markPdfButtons() {
+        pdfButtons.forEach(function (pair) { pair[0].setAttribute("aria-pressed", String(viewing === pair[1])); });
+    }
+
+    pdfButtons.forEach(function (pair) {
+        if (!pair[0]) return;
+        pair[0].addEventListener("click", function (e) {
+            if (!isAdmin || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;  // locked: go to sign-in; modifier: new tab
+            e.preventDefault();
+            if (viewing === pair[1]) { showTab(current()); return; }  // pressing the open one closes it
+            openPdf(pair[1]);
+        });
+    });
 
     function showPdfs(row) {
         if (!pdfBox || !row) return;
@@ -121,8 +162,7 @@
             if (!url) return;
             any = true;
             link.href = isAdmin ? url : "/admin?next=" + encodeURIComponent(location.pathname + "#" + row.dataset.slug);
-            link.target = isAdmin ? "_blank" : "_self";
-            link.rel = "noopener";
+            link.title = isAdmin ? "Show here (Ctrl/Cmd-click: new tab)" : "Sign in to open";
         });
         pdfBox.hidden = !any;
         panel.dataset.admin = String(isAdmin);
@@ -136,11 +176,11 @@
     }
 
     function showTab(row) {
+        closePdf();
         tabs.forEach(function (t) { t.setAttribute("aria-selected", String(t.dataset.tab === tab)); });
         byId("player-more").parentElement.hidden = tab !== "original";  // other recordings only make sense for the song, not for the sheet-music lesson
         if (!row) return;
         var id = tab === "original" ? row.dataset.original : row.dataset.lesson;
-        byId("player-yt").href = watch + id;
         mount(frame, id, row.dataset.query, tab === "original");
     }
 

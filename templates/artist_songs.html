@@ -63,13 +63,19 @@
                         <button type="button" role="tab" class="player-tab" id="tab-lesson" data-tab="lesson" aria-selected="true">Sheet-music lesson</button>
                         <button type="button" role="tab" class="player-tab" id="tab-original" data-tab="original" aria-selected="false">Original recording</button>
                     </div>
-                    <a class="player-yt" id="player-yt" href="https://www.youtube.com/watch?v={{ first.demo_id }}" target="_blank" rel="noopener">Open on YouTube ↗</a>
-                </div>
-                <div class="player-pdfs" id="player-pdfs" hidden>
-                    <a class="pdf-btn" id="pdf-sheet" hidden><svg class="icon-lock" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.500 10.500V8a3.500 3.500 0 0 1 7 0v2.500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg class="icon-doc" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 3.500h6.500L18 8v12.500H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13 3.500V8.500h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Sheet music</span></a>
-                    <a class="pdf-btn" id="pdf-tab" hidden><svg class="icon-lock" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.500 10.500V8a3.500 3.500 0 0 1 7 0v2.500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg class="icon-doc" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 3.500h6.500L18 8v12.500H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13 3.500V8.500h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Tablature</span></a>
+                    <div class="player-pdfs" id="player-pdfs" hidden>
+                        <a class="pdf-btn pdf-btn-sheet" id="pdf-sheet" hidden><svg class="icon-lock" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.500 10.500V8a3.500 3.500 0 0 1 7 0v2.500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg class="icon-doc" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 3.500h6.500L18 8v12.500H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13 3.500V8.500h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Sheet music</span></a>
+                        <a class="pdf-btn pdf-btn-tab" id="pdf-tab" hidden><svg class="icon-lock" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.500 10.500V8a3.500 3.500 0 0 1 7 0v2.500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg class="icon-doc" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 3.500h6.500L18 8v12.500H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13 3.500V8.500h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Tablature</span></a>
+                    </div>
                 </div>
                 <div class="player-frame" id="player-frame"></div>
+                <div class="pdf-viewer" id="pdf-viewer" hidden>
+                    <div class="pdf-viewer-bar">
+                        <strong id="pdf-viewer-title"></strong>
+                        <a id="pdf-newtab" target="_blank" rel="noopener">Open in new tab ↗</a>
+                    </div>
+                    <iframe id="pdf-frame" title="Sheet music PDF"></iframe>
+                </div>
                 <p class="player-more" hidden><a id="player-more" target="_blank" rel="noopener"
                     href="https://www.youtube.com/results?search_query={{ (first.gr_name ~ ' ' ~ artist.gr_name)|urlencode }}">More videos of this song on YouTube ↗</a></p>
             </div>

@@ -18,6 +18,12 @@
     --accent-hover: #1f47c0;
     --accent-soft: rgba(40, 88, 224, .1);
     --amber: #b45309;
+    --rec: #7c3aed;
+    --rec-soft: rgba(124, 58, 237, .10);
+    --pdf-sheet: #b45309;
+    --pdf-sheet-soft: rgba(180, 83, 9, .10);
+    --pdf-tab: #0f766e;
+    --pdf-tab-soft: rgba(15, 118, 110, .10);
     --glow-1: rgba(40, 88, 224, .16);
     --glow-2: rgba(245, 158, 11, .14);
     --shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 8px 24px rgba(15, 23, 42, .06);
@@ -41,6 +47,12 @@
     --accent-hover: #8aacff;
     --accent-soft: rgba(107, 149, 255, .16);
     --amber: #f5b14a;
+    --rec: #c4a8ff;
+    --rec-soft: rgba(196, 168, 255, .15);
+    --pdf-sheet: #f5b14a;
+    --pdf-sheet-soft: rgba(245, 177, 74, .14);
+    --pdf-tab: #5eead4;
+    --pdf-tab-soft: rgba(94, 234, 212, .13);
     --glow-1: rgba(80, 120, 255, .22);
     --glow-2: rgba(245, 158, 11, .1);
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
@@ -242,25 +254,33 @@ a { text-underline-offset: 3px; }
 .song-list li > .player-panel { margin: .5rem 0 .75rem; }
 .player-title { font-size: 1.3rem; font-weight: 700; margin: 0; }
 .player-title-gr { font-size: 1rem; margin: 0 0 .75rem; }
-.player-tabs { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; margin-bottom: .75rem; }
+.player-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; margin-bottom: .75rem; }
 .player-tablist { display: flex; flex-wrap: wrap; gap: .4rem; }
 .player-tab {
-    padding: .45rem 1rem; border: 1px solid var(--line); border-radius: 999px; background: var(--bg);
+    --tab-color: var(--accent); --tab-soft: var(--accent-soft);
+    padding: .45rem 1rem; border: 1px solid color-mix(in srgb, var(--tab-color) 40%, var(--line)); border-radius: 999px; background: var(--bg);
     color: var(--muted); font-size: .9rem; font-weight: 650;
 }
-.player-tab:hover { color: var(--ink); border-color: var(--accent); }
-.player-tab[aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+.player-tab[data-tab="original"] { --tab-color: var(--rec); --tab-soft: var(--rec-soft); }
+.player-tab:hover { color: var(--ink); border-color: var(--tab-color); }
+.player-tab[aria-selected="true"] { background: var(--tab-soft); border-color: var(--tab-color); color: var(--ink); }
 .player-label { display: flex; align-items: center; gap: .5rem; font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 0; }
 .player-label::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--accent); }
-.player-yt { font-size: .85rem; white-space: nowrap; }
-.player-pdfs { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .75rem; }
+.player-pdfs { display: flex; flex-wrap: wrap; gap: .5rem; }
 .pdf-btn {
-    display: inline-flex; align-items: center; gap: .45rem; padding: .45rem 1rem; border: 1px solid var(--line); border-radius: 999px;
-    background: var(--bg); color: var(--ink); font-size: .9rem; font-weight: 650; text-decoration: none;
+    display: inline-flex; align-items: center; gap: .45rem; padding: .45rem 1rem; border: 1px solid var(--pdf-color); border-radius: 999px;
+    background: var(--pdf-soft); color: var(--ink); font-size: .9rem; font-weight: 650; text-decoration: none;
 }
-.pdf-btn:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.pdf-btn-sheet { --pdf-color: var(--pdf-sheet); --pdf-soft: var(--pdf-sheet-soft); }
+.pdf-btn-tab { --pdf-color: var(--pdf-tab); --pdf-soft: var(--pdf-tab-soft); }
+.pdf-btn svg { color: var(--pdf-color); }
+.pdf-btn:hover { background: color-mix(in srgb, var(--pdf-color) 22%, transparent); color: var(--ink); }
 .pdf-btn .icon-doc, .player-panel[data-admin="true"] .pdf-btn .icon-lock { display: none; }
 .player-panel[data-admin="true"] .pdf-btn .icon-doc { display: block; }
+.pdf-viewer { border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--bg); }
+.pdf-viewer-bar { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .5rem .9rem; font-size: .9rem; border-bottom: 1px solid var(--line); }
+.pdf-viewer iframe { display: block; width: 100%; height: max(26rem, calc(100vh - 17rem)); border: 0; background: #fff; }
+.pdf-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--pdf-color) 28%, transparent); box-shadow: 0 0 0 2px var(--pdf-soft); }
 .player-more { margin: .9rem 0 0; font-size: .95rem; }
 /* 16:9, as wide as the column allows but never taller than what fits next to the title and tabs. */
 .player-frame {

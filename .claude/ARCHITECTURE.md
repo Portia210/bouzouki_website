@@ -17,7 +17,7 @@ Pages are Jinja2 + Bootstrap 5.3 (served locally, no CDN) + small vanilla JS fil
 - `GET /find?q=` → same index, HTML results page (no-JS / no-match fallback; the search box opens the best match directly)
 - `GET /images/<artist slug>` → BLOB from DB on demand, `lru_cache`d, ETag + 7-day cache
 - `GET/POST /admin` (password-only sign-in, `?next=` same-site paths only), `POST /admin/logout`, `GET /admin/session` → `{admin: bool}` (no-store). Session = signed cookie, 7 days since the last visit. No `ADMIN_PASSWORD` → all admin/PDF routes 404 and no PDF buttons are rendered
-- `GET /pdf/<song_id>/<sheet|tab>` → not admin: 302 to `/admin?next=…` (before any lookup); admin: 302 to a 5-minute R2 presigned URL (inline, filename from the *current* names); no key → 404; R2 env missing → 503
+- `GET /pdf/<song_id>/<sheet|tab>` → not admin: 302 to `/admin?next=…` (before any lookup); admin: 302 to a 5-minute R2 presigned URL (inline, filename from the *current* names); no key → 404; R2 env missing → 503. The artist page shows it inside the player (iframe `#pdf-frame` replaces the video; "Open in new tab" beside it), so CSP `frame-src` allows `'self'` (the `/pdf` hop) and `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com` (added only when that env var is a 32-hex id)
 - `/healthz`, `/robots.txt`, `/sitemap.xml`
 
 ## Data model (schema version 4, `PRAGMA user_version`)

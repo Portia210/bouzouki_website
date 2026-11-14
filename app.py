@@ -1,5 +1,6 @@
 import hmac
 import os
+import re
 import secrets
 from datetime import timedelta
 from functools import lru_cache
@@ -20,12 +21,18 @@ from search import MAX_QUERY_LEN, SearchIndex
 
 load_dotenv()
 
-CSP = (
-    "default-src 'self'; img-src 'self' data:; "
-    "script-src 'self' https://www.youtube.com; "  # YouTube's iframe API reports videos that can't be played
-    "frame-src https://www.youtube-nocookie.com; "
-    "base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
-)
+def _csp() -> str:
+    # 'self' because an embedded PDF is requested from /pdf, which redirects to the R2 host (both are checked).
+    frames = "'self' https://www.youtube-nocookie.com"
+    account = os.getenv("R2_ACCOUNT_ID", "")
+    if re.fullmatch(r"[0-9a-f]{32}", account):  # a Cloudflare account id; anything else must not reach a header
+        frames += f" https://{account}.r2.cloudflarestorage.com"
+    return (
+        "default-src 'self'; img-src 'self' data:; "
+        "script-src 'self' https://www.youtube.com; "  # YouTube's iframe API reports videos that can't be played
+        f"frame-src {frames}; "
+        "base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+    )
 
 
 def _sniff_image(data: bytes) -> str:
@@ -59,6 +66,7 @@ def create_app(db_file: str | Path | None = None, secret_key: str | None = None,
         raise RuntimeError("FLASK_SECRET_KEY environment variable is required")
     app.config["SECRET_KEY"] = secret_key
     app.config["BOOTSTRAP_SERVE_LOCAL"] = True  # no CDN: faster, and the CSP stays strict
+    csp = _csp()
     # No ADMIN_PASSWORD = no admin: /admin is a 404 and the PDF buttons are not rendered.
     admin_password = admin_password or os.getenv("ADMIN_PASSWORD") or ""
 
@@ -292,7 +300,7 @@ def create_app(db_file: str | Path | None = None, secret_key: str | None = None,
 
     @app.after_request
     def security_headers(response):
-        response.headers.setdefault("Content-Security-Policy", CSP)
+        response.headers.setdefault("Content-Security-Policy", csp)
         response.headers.setdefault("X-Content-Type-Options", "nosniff")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         if request.is_secure:
