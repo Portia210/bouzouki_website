@@ -73,11 +73,19 @@
             else if (e.key === "ArrowUp") { e.preventDefault(); highlight((active - 1 + items.length) % items.length); }
         });
         // Enter / Search button opens the best match straight away; /find is only the no-JS and no-match fallback.
+        // The results sit inside the form, and a link to the page you are already on only changes the #hash
+        // (no reload), so they must be closed here or they would stay open over the song.
         form.addEventListener("submit", function (e) {
             if (!list.hidden && items.length && input.value.trim().length >= 2) {
                 e.preventDefault();
-                window.location.href = items[active >= 0 ? active : 0].href;
+                var href = items[active >= 0 ? active : 0].href;
+                close();
+                input.blur();
+                window.location.href = href;
             }
+        });
+        list.addEventListener("click", function (e) {
+            if (e.target.closest("a.search-item")) { close(); input.blur(); }
         });
         document.addEventListener("click", function (e) { if (!form.contains(e.target)) close(); });
         input.addEventListener("focus", function () { if (items.length) { list.hidden = false; input.setAttribute("aria-expanded", "true"); } });
