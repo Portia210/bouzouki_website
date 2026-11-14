@@ -19,6 +19,7 @@ def pdf_db(tmp_path):
     path = tmp_path / "music.db"
     shutil.copy(DEFAULT_DB, path)
     conn = sqlite3.connect(path)
+    conn.execute("UPDATE songs SET score_key = NULL, tab_key = NULL")  # the real DB has keys now; the tests define their own
     conn.execute("UPDATE songs SET score_key = 'pdf/1/sheet.pdf', tab_key = 'pdf/1/tab.pdf' WHERE song_id = 1")
     conn.execute("UPDATE songs SET score_key = 'pdf/2/sheet.pdf' WHERE song_id = 2")
     conn.commit()

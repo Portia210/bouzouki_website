@@ -359,3 +359,39 @@ def test_plan_asks_for_a_look_at_picked_names_that_do_not_fit_the_folder(db):
     assert pdf_sync.needs_review(odd, {"name": "ΨΕΥΤΙΚΟΣ ΝΤΟΥΝΙΑΣ - ΠΑΠΑΪΩΑΝΝΟΥ ΓΙΑΝΝΗΣ.pdf"})
     assert pdf_sync.needs_review(odd, {"name": "ΨΕΥΤΙΚΟΣ ΝΤΟΥΝΙΑΣ - ΒΑΜΒΑΚΑΡΗΣ ΜΑΡΚΟΣ ΠΑΡΤΙΤΟΥΡΑ.pdf"})
     assert not pdf_sync.needs_review(odd, {"name": "ΨΕΥΤΙΚΟΣ ΝΤΟΥΝΙΑΣ - ΜΑΡΚΟΣ ΒΑΜΒΑΚΑΡΗΣ ΤΑΜΠΛΑΤΟΥΡΑ.pdf"})  # artist words in another order
+
+
+# ------------------------------------------------------------------ report
+def test_report_lists_what_needs_a_human_look(db, world, s3):
+    songs = pdf_sync.load_songs(sqlite3.connect(db))
+    r = pdf_sync.build_report(world[2], songs)
+    assert r["unmatched_folders"] == [] and r["songs_without_folder"] == []
+    assert [s.slug for s in r["no_pdf"]] == ["xoris"]
+    assert sorted((s.slug, k) for s, k in r["one_kind"]) == [("melodia-5", "sheet"), ("melodia-58", "sheet"), ("pyretos", "sheet")]
+    assert [(s.slug, how) for _, s, how in r["names_only"]] == [("melodia-5", "names only (no link file)")]
+    assert len(r["to_upload"]) == 5 and r["stale_keys"] == []
+
+
+def test_report_suggests_the_closest_songs_for_a_folder_that_matches_nothing(db, world):
+    folders = [f for f in world[2] if f["song"] != "ΧΩΡΙΣ"] + [folder("ΠΑΝΟΥ ΑΚΗΣ", "ΧΩΡΙΣΑ", None, {})]  # a typo'd folder
+    r = pdf_sync.build_report(folders, pdf_sync.load_songs(sqlite3.connect(db)))
+    assert [s.slug for s in r["songs_without_folder"]] == ["xoris"]
+    (bad, near, why), = r["unmatched_folders"]
+    assert bad["song"] == "ΧΩΡΙΣΑ" and near[0].slug == "xoris" and why
+
+
+def test_report_after_apply_has_nothing_to_upload_and_flags_stale_keys(db, world, s3):
+    apply(world)
+    conn = sqlite3.connect(db)
+    conn.execute("UPDATE songs SET tab_key = 'pdf/2/tab.pdf' WHERE song_id = 2")  # a key whose file is not in the folders
+    conn.commit()
+    r = pdf_sync.build_report(world[2], pdf_sync.load_songs(conn))
+    assert r["to_upload"] == [] and [(s.slug, k) for s, k in r["stale_keys"]] == [("pyretos", "tab")]
+
+
+def test_report_command_exit_code_is_1_only_when_something_needs_action(db, world, capsys):
+    root, manifest, folders = world
+    assert pdf_sync.cmd_report(argparse.Namespace(manifest=str(manifest))) == 0
+    manifest.write_text(json.dumps({"songs": folders + [folder("ΠΑΝΟΥ ΑΚΗΣ", "ΑΓΝΩΣΤΟ", None, {})]}), encoding="utf-8")
+    assert pdf_sync.cmd_report(argparse.Namespace(manifest=str(manifest))) == 1
+    assert "ΑΓΝΩΣΤΟ" in capsys.readouterr().out

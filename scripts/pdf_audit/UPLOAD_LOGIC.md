@@ -9,6 +9,8 @@ D:\מסמכים\python-downloads\<ARTIST>\<SONG>\*   (Windows, not mounted in WS
    │ scripts/pdf_audit/manifest.ps1  → manifest.json (names + sizes + the video link; no bytes)
    ▼
 pdf_sync.py plan    manifest → match folders to songs → pick files        (no network, no writes)
+pdf_sync.py report  what needs a human look: unmatched folders (+3 closest songs), songs without folder /
+                    PDF / one of the two, names-only matches, ties, not-yet-uploaded, stale DB keys
 pdf_sync.py apply   + --root (the folder, mounted) → sha256 → HEAD → PUT → HEAD → write DB key
 pdf_sync.py verify  DB ⇄ bucket: 0 missing, 0 orphans (--deep also checks object metadata)
 pdf_sync.py prune   delete orphans (dry run unless --yes)
@@ -17,6 +19,7 @@ Run (WSL): `sudo mount -t drvfs D: /mnt/d` once per boot, then
 ```
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w scripts/pdf_audit/manifest.ps1)" > manifest.json
 uv run python pdf_sync.py plan   --manifest manifest.json
+uv run python pdf_sync.py report --manifest manifest.json     # exit 1 if a folder is unmatched or a pick is a tie
 uv run python pdf_sync.py apply  --manifest manifest.json --root "/mnt/d/מסמכים/python-downloads" --dry-run
 uv run python pdf_sync.py apply  --manifest manifest.json --root "/mnt/d/מסמכים/python-downloads"
 uv run python pdf_sync.py verify --deep

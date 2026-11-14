@@ -1,6 +1,7 @@
 """Keep the Patreon sheet-music PDFs, the private R2 bucket and `songs.score_key/tab_key` in sync.
 
     uv run python pdf_sync.py plan   --manifest M.json              # matches + picked files, no network, no writes
+    uv run python pdf_sync.py report --manifest M.json              # what is not matched / has no PDF / is not uploaded yet
     uv run python pdf_sync.py apply  --manifest M.json --root DIR   # upload what is missing/changed, then write keys
     uv run python pdf_sync.py verify [--deep]                       # DB <-> bucket: 0 missing and 0 orphans
     uv run python pdf_sync.py prune  [--yes]                        # delete orphans (dry run without --yes)
@@ -18,6 +19,7 @@ import sys
 import unicodedata
 from collections import defaultdict
 from datetime import datetime
+from difflib import SequenceMatcher
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
@@ -165,6 +167,36 @@ def build_plan(folders: list[dict], songs: list[DbSong]):
     return matches, items, problems
 
 
+def build_report(folders: list[dict], songs: list[DbSong]) -> dict:
+    """Everything that needs a human look, from the manifest and the DB alone (no network, no writes)."""
+    matches, items, problems = build_plan(folders, songs)
+    matched = {id(f) for f, _, _ in matches}
+    claimed = {s.song_id for _, s, _ in matches}
+    free = [s for s in songs if s.song_id not in claimed]
+    kinds = defaultdict(set)
+    for item in items:
+        kinds[item.song.song_id].add(item.kind)
+
+    def closest(folder):  # the songs without a folder that look most like this folder
+        def score(s):
+            song = SequenceMatcher(None, phonetic_key(folder["song"]), phonetic_key(s.song_gr)).ratio()
+            artist = SequenceMatcher(None, phonetic_key(folder["artist"]), phonetic_key(s.artist_gr)).ratio()
+            return 0.6 * song + 0.4 * artist
+        return sorted(free, key=score, reverse=True)[:3]
+
+    return {
+        "unmatched_folders": [(f, closest(f), [p for p in problems if _label(f) in p]) for f in folders if id(f) not in matched],
+        "songs_without_folder": free,
+        "no_pdf": [s for _, s, _ in matches if not kinds[s.song_id]],
+        "one_kind": [(s, next(iter(kinds[s.song_id]))) for _, s, _ in matches if len(kinds[s.song_id]) == 1],
+        "ambiguous_picks": [p for p in problems if p.startswith("ambiguous")],
+        "names_only": [(f, s, how) for f, s, how in matches if how != "demo_id + names"],
+        "to_upload": [i for i in items if not getattr(i.song, KINDS[i.kind].column)],
+        "stale_keys": [(s, k) for s in songs for k, spec in KINDS.items() if getattr(s, spec.column) and k not in kinds[s.song_id]],
+        "totals": {"folders": len(folders), "songs": len(songs), "matched": len(matches), "pdfs": len(items)},
+    }
+
+
 # ------------------------------------------------------------------ bucket
 def head(s3, bucket: str, key: str):
     from botocore.exceptions import ClientError
@@ -274,6 +306,32 @@ def cmd_plan(args) -> int:
     return 1 if problems else 0
 
 
+def cmd_report(args) -> int:
+    conn = sqlite3.connect(f"file:{db_path()}?mode=ro", uri=True)
+    r = build_report(read_manifest(args.manifest), load_songs(conn))
+    song = lambda s: f"{s.slug}  ({s.artist_gr} / {s.song_gr})"  # noqa: E731
+
+    def section(title, rows, action):
+        print(f"\n{title}: {len(rows)}" + ("" if rows else "  OK"))
+        if rows:
+            print(f"   -> {action}")
+        for row in rows:
+            print("   ", row)
+
+    t = r["totals"]
+    print(f"folders {t['folders']}, songs {t['songs']}, matched {t['matched']}, PDFs picked {t['pdfs']}")
+    section("1. Folders that match no song", [f"{_label(f)}  [{'; '.join(why) or 'no match'}]" + "".join(f"\n        maybe: {song(s)}" for s in near)
+             for f, near, why in r["unmatched_folders"]], "pick the right song from 'maybe' and fix the folder name, or the DB name")
+    section("2. Songs without any folder", [song(s) for s in r["songs_without_folder"]], "no PDF will exist for them; add a folder or ignore")
+    section("3. Songs whose folder has no PDF", [song(s) for s in r["no_pdf"]], "no buttons; nothing to do unless a PDF should exist")
+    section("4. Songs with only one of sheet / tab", [f"{song(s)}  only {k}" for s, k in r["one_kind"]], "only that button is shown")
+    section("5. Folders with several equally good PDFs", r["ambiguous_picks"], "rename or remove the extra file, then run again")
+    section("6. Matched by name only (no usable video link)", [f"{_label(f)} -> {s.slug}: {how}" for f, s, how in r["names_only"]], "check once that it is the right song")
+    section("7. Picked PDFs not in the DB yet (run apply)", [f"{i.song.slug} {i.kind}: {i.file['name']}" for i in r["to_upload"]], "run apply")
+    section("8. DB keys whose file is no longer in the folders", [f"{song(s)} {k}" for s, k in r["stale_keys"]], "verify before deleting anything")
+    return 1 if r["unmatched_folders"] or r["ambiguous_picks"] else 0
+
+
 def cmd_apply(args) -> int:
     import storage
 
@@ -372,6 +430,8 @@ def main(argv: list[str]) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
     plan = sub.add_parser("plan")
     plan.add_argument("--manifest", required=True)
+    report = sub.add_parser("report")
+    report.add_argument("--manifest", required=True)
     apply = sub.add_parser("apply")
     apply.add_argument("--manifest", required=True)
     apply.add_argument("--root", required=True, help="folder that holds <artist>/<song>/ (e.g. /mnt/d/...)")
@@ -383,7 +443,7 @@ def main(argv: list[str]) -> int:
     prune.add_argument("--yes", action="store_true")
     prune.add_argument("--force", action="store_true", help="allow deleting more than 10%% of the bucket")
     args = parser.parse_args(argv)
-    return {"plan": cmd_plan, "apply": cmd_apply, "verify": cmd_verify, "prune": cmd_prune}[args.command](args)
+    return {"plan": cmd_plan, "report": cmd_report, "apply": cmd_apply, "verify": cmd_verify, "prune": cmd_prune}[args.command](args)
 
 
 if __name__ == "__main__":
