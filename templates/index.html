@@ -7,7 +7,8 @@
 
 {% block content %}
 <section class="hero">
-    <div class="container-xxl">
+    <div class="container-xxl hero-inner">
+        <img class="hero-art d-none d-lg-block" src="{{ url_for('static', filename='img/logo.svg') }}" width="140" height="410" alt="">
         <p class="eyebrow">{{ song_count }} songs · {{ artists|length }} artists</p>
         <h1>Rebetiko songs<br>for the <span class="grad">bouzouki</span></h1>
         <p class="lead">Watch the original recording, then learn it from the sheet-music lesson.</p>

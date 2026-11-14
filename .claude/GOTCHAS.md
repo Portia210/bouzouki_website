@@ -14,6 +14,7 @@ being true.
 | `.gitignore` contains `*.db` | A new `.db` file is ignored | `!instance/music.db` keeps the main DB tracked; use `git add -f` for others |
 | `pkill -f <text>` in a Bash tool call matches the call itself | Shell exits 144 | Kill by port: `fuser -k 5055/tcp` |
 | Some YouTube videos show "This video is unavailable" inside the embed | Region/rights restriction on YouTube's side; oEmbed and `playableInEmbed` still say OK from outside the region | Can't be fixed here; every player has an "Open on YouTube ↗" link |
+| Flask caches templates unless `FLASK_DEBUG=1` | Edited template/CSS-link changes don't show, or a half-updated server returns 500 | Restart the server (or run with `FLASK_DEBUG=1`) |
 | Migrations rebuild tables | DB file doubles in size | `db_migrate.py` runs `VACUUM` afterwards |
 
 ## Known gaps

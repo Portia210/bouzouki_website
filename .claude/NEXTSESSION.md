@@ -17,6 +17,7 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
 - Changed: Greek-bouzouki logo/favicon set (SVG source `static/img/logo.svg`; ICO/PNGs rendered from it with headless Chrome); no song pages any more — `/song/<slug>` and search results go to `/artist/<slug>#<song>`, Enter opens the best match; artist page list scrolls with the page, player panel sticky (phone: player above the list); "Open on YouTube" link per player.
 - Verified: pytest (39), headless-Chrome screenshots + DOM checks (hash select, search → hash, header position).
 - NOT verified: the reported home-page 500 — not reproducible; most likely the dev server briefly ran new templates with old `app.py` while I was editing (restart the server). Real devices/Safari; why some videos say "unavailable" for the developer (likely region).
+- Also: new ornate bouzouki logo (`logo.svg` upright, `favicon.svg`/PNG/ICO cropped tile), hero illustration, artist cards ~320px, larger sticky player (cols 4/8, capped to viewport).
 - Next: if the 500 comes back, send the traceback.
 
 ## 2026-11-14 — Search, DB, redesign, Railway prep

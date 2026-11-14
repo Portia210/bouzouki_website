@@ -9,7 +9,7 @@ the Latin transliteration (`mou` / `moy` / `μου`).
 ```bash
 uv sync
 cp .env.example .env        # then set FLASK_SECRET_KEY
-uv run python app.py        # http://localhost:5000
+uv run python app.py        # http://localhost:5000  (FLASK_DEBUG=1 reloads on edits)
 uv run pytest -q            # tests
 ```
 

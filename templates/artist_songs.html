@@ -20,7 +20,7 @@
 
 <div class="container-xxl py-3 py-md-4">
     <div class="row g-4">
-        <div class="col-md-6 col-lg-5 order-2 order-md-1">
+        <div class="col-md-5 col-lg-4 order-2 order-md-1">
             {% if artist.number_of_songs > 8 %}
             <input type="search" id="song-filter" class="form-control mb-3" placeholder="Filter {{ artist.number_of_songs }} songs…"
                 aria-label="Filter songs by {{ artist.en_name }}" data-artist="{{ artist.slug }}" maxlength="100">
@@ -41,7 +41,7 @@
             <p class="empty-note" id="filter-empty" hidden>No songs match. Spelling doesn't have to be exact — try fewer letters.</p>
         </div>
 
-        <aside class="col-md-6 col-lg-7 order-1 order-md-2">
+        <aside class="col-md-7 col-lg-8 order-1 order-md-2">
             <div class="player-panel" id="player-panel">
                 <h2 class="player-title" id="player-title">{{ first.en_name }}</h2>
                 <p class="greek-name player-title-gr" id="player-title-gr">{{ first.gr_name }}</p>
