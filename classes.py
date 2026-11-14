@@ -1,88 +1,91 @@
+import os
 import sqlite3
+from dataclasses import dataclass, field
+from pathlib import Path
+
 from logger import logger
 
+DEFAULT_DB = Path(__file__).parent / "instance" / "music.db"
+REQUIRED_VERSION = 2  # see migrations/; run `uv run python db_migrate.py up`
+
+
+def db_path() -> Path:
+    return Path(os.getenv("DATABASE_PATH", DEFAULT_DB))
+
+
+@dataclass
 class Artist:
-    def __init__(self, en_name, gr_name, number_of_songs, artist_img, songs):
-        self.gr_name = gr_name
-        self.en_name = en_name
-        self.number_of_songs = number_of_songs
-        self.artist_img = artist_img
-        self.songs = songs
+    artist_id: int
+    slug: str
+    en_name: str
+    gr_name: str
+    has_image: bool
+    songs: list["Song"] = field(default_factory=list)
 
-    def __str__(self):
-        return f"{self.gr_name} {self.en_name} {self.number_of_songs} {self.songs}"
-    
+    @property
+    def number_of_songs(self) -> int:
+        return len(self.songs)
+
+
+@dataclass
 class Song:
-    def __init__(self, artist_name, en_name, gr_name, video_id, demo_id):
-        self.artist_name = artist_name
-        self.gr_name = gr_name
-        self.en_name = en_name
-        self.video_id = video_id
-        self.demo_id = demo_id
+    song_id: int
+    slug: str
+    en_name: str
+    gr_name: str
+    video_id: str  # original recording on YouTube
+    demo_id: str  # sheet-music / bouzouki demo on YouTube
+    artist: Artist
 
-    def __str__(self):
-        return f"{self.artist_name} {self.gr_name} {self.en_name} {self.video_id} {self.demo_id}"
-    
-def import_db():
-    """Import artists and songs from SQLite database with error handling"""
-    conn = None
+
+class Catalog:
+    """All artists and songs, loaded once. Image bytes stay in the DB."""
+
+    def __init__(self, artists: list[Artist]):
+        self.artists = artists
+        self.songs = [s for a in artists for s in a.songs]
+        self.artist_by_slug = {a.slug: a for a in artists}
+        self.song_by_slug = {s.slug: s for s in self.songs}
+        # Old URLs used the English name; first match wins for the few duplicate titles.
+        self.artist_by_name = {a.en_name: a for a in artists}
+        self.song_by_name: dict[str, Song] = {}
+        for s in self.songs:
+            self.song_by_name.setdefault(s.en_name, s)
+
+
+def load_catalog(path: Path | None = None) -> Catalog:
+    path = Path(path or db_path())
+    # Read-only: the app never writes, and a missing file must not create an empty DB.
+    conn = sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=10.0)
     try:
-        logger.info("Attempting to connect to database")
-
-        # Check if database file exists
-        db_path = 'instance/music.db'
-        if not sqlite3.connect(db_path).execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall():
-            logger.error(f"Database {db_path} appears to be empty or corrupted")
-            return []
-
-        conn = sqlite3.connect(db_path, timeout=10.0)  # Add timeout
-        cursor = conn.cursor()
-
-        # Execute queries with error handling
-        logger.debug("Fetching artists from database")
-        cursor.execute("SELECT * FROM artists")
-        db_artists = cursor.fetchall()
-        logger.info(f"Found {len(db_artists)} artists")
-
-        logger.debug("Fetching songs from database")
-        cursor.execute("SELECT * FROM songs")
-        db_songs = cursor.fetchall()
-        logger.info(f"Found {len(db_songs)} songs")
-
-        artists = []
-        for artist in db_artists:
-            try:
-                # artist columns are: artist_id	en_name	gr_name	number_of_songs	artist_img
-                # song columns are: song_id	artist_name	en_name	gr_name	video_id	demo_id
-                artist_songs = [
-                    Song(song[1], song[2], song[3], song[4], song[5])
-                    for song in db_songs if song[1] == artist[1]
-                ]
-                artist_obj = Artist(artist[1], artist[2], artist[3], artist[4], artist_songs)
-                artists.append(artist_obj)
-            except Exception as e:
-                logger.error(f"Error processing artist {artist[1] if len(artist) > 1 else 'unknown'}: {e}")
-                continue
-
-        logger.info(f"Successfully processed {len(artists)} artists")
-        return artists
-
-    except sqlite3.OperationalError as e:
-        logger.error(f"Database operational error: {e}")
-        return []
-    except sqlite3.DatabaseError as e:
-        logger.error(f"Database error: {e}")
-        return []
-    except FileNotFoundError:
-        logger.error("Database file not found: instance/music.db")
-        return []
-    except Exception as e:
-        logger.error(f"Unexpected error importing database: {e}")
-        return []
+        version = conn.execute("PRAGMA user_version").fetchone()[0]
+        if version < REQUIRED_VERSION:
+            raise RuntimeError(
+                f"{path} is at schema version {version}, need {REQUIRED_VERSION}: "
+                "run `uv run python db_migrate.py up`"
+            )
+        artists = {
+            row[0]: Artist(row[0], row[1], row[2], row[3], bool(row[4]))
+            for row in conn.execute(
+                "SELECT artist_id, slug, en_name, gr_name, artist_img IS NOT NULL FROM artists ORDER BY artist_id"
+            )
+        }
+        for row in conn.execute(
+            "SELECT song_id, artist_id, slug, en_name, gr_name, video_id, demo_id FROM songs ORDER BY song_id"
+        ):
+            artist = artists[row[1]]
+            artist.songs.append(Song(row[0], row[2], row[3], row[4], row[5], row[6], artist))
     finally:
-        if conn:
-            try:
-                conn.close()
-                logger.debug("Database connection closed")
-            except Exception as e:
-                logger.error(f"Error closing database connection: {e}")
+        conn.close()
+    catalog = Catalog(list(artists.values()))
+    logger.info(f"Loaded {len(catalog.artists)} artists and {len(catalog.songs)} songs")
+    return catalog
+
+
+def load_artist_image(artist_id: int, path: Path | None = None) -> bytes | None:
+    conn = sqlite3.connect(f"file:{Path(path or db_path())}?mode=ro", uri=True, timeout=10.0)
+    try:
+        row = conn.execute("SELECT artist_img FROM artists WHERE artist_id = ?", (artist_id,)).fetchone()
+    finally:
+        conn.close()
+    return row[0] if row else None

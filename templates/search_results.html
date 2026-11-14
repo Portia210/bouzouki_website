@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import avatar %}
+
+{% block title %}{{ 'Search: ' ~ term if term else 'Search' }} — Rebetiko Music{% endblock %}
+
+{% block content %}
+<div class="container-xxl py-4">
+    <h1 class="section-title">{% if term %}Results for “{{ term }}”{% else %}Search{% endif %}</h1>
+
+    {% if not term %}
+    <p class="empty-note">Type a song or artist name, in Greek or in any spelling of the transliteration.</p>
+    {% elif not artists and not songs %}
+    <p class="empty-note">No songs or artists match “{{ term }}”. Spelling doesn't have to be exact — try fewer letters, or the Greek name.</p>
+    {% endif %}
+
+    {% if artists %}
+    <h2 class="player-label">Artists</h2>
+    <ul class="artist-grid artist-grid-sm mb-4">
+        {% for artist in artists %}
+        <li>
+            <a class="artist-card" href="{{ url_for('artist_songs', slug=artist.slug) }}">
+                {{ avatar(artist) }}
+                <span class="artist-name">{{ artist.en_name }}</span>
+                <span class="artist-count">{{ artist.number_of_songs }} songs</span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if songs %}
+    <h2 class="player-label">Songs</h2>
+    <ul class="song-list">
+        {% for song in songs %}
+        <li>
+            <a class="song-row" href="{{ url_for('view_song', slug=song.slug) }}">
+                <span class="song-title">{{ song.en_name }}<small>{{ song.gr_name }} · {{ song.artist.en_name }}</small></span>
+                <span class="song-go" aria-hidden="true">→</span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+{% endblock %}

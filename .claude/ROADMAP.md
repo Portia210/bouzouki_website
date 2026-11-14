@@ -22,7 +22,7 @@ Questions that block or shape tasks. A task touching one of these waits for an a
 
 ## Part A — `<theme>`
 
-- [ ] **A1** — `<title>`
+
   - Goal: `<one sentence>`
   - Done when: `<criterion>`; `<criterion>`
   - Depends on: —

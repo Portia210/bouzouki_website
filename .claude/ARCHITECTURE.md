@@ -1,56 +1,61 @@
 # ARCHITECTURE
 
-**Derived from source on 2026-11-14 at `0e861f1`.** Source code outranks this
-file; if they disagree, report it and re-derive the section. Facts only — no history,
-no plans (those go in ROADMAP).
+**Derived from source on 2026-11-14.** Source code outranks this file; if they disagree,
+report it and re-derive the section. Facts only — no history, no plans (those go in ROADMAP).
 
 ## Overview
-Single-process Flask app (`app.py`). At import time `classes.import_db()` loads every
-artist and song from SQLite into memory (`all_artists`); all routes read that list and
-never touch the DB again. Pages are Jinja2 + Bootstrap 5; search is jQuery UI autocomplete
-calling `/search`. Content is Greek/English sheet-music videos hosted on YouTube.
+Flask app built by `create_app()` in `app.py` (`app:app` for gunicorn). At startup
+`classes.load_catalog()` reads artists and songs from SQLite into memory (read-only
+connection, image BLOBs stay in the DB) and `search.SearchIndex` builds a phonetic index.
+Pages are Jinja2 + Bootstrap 5.3 (served locally, no CDN) + small vanilla JS files.
 
 ## Request / data flow
-- `GET /` → `app.home` → sorts `all_artists` by `number_of_songs` → `index.html`
-- `GET /artist/<en_name>` → linear scan of `all_artists` → `artist_songs.html`
-- `GET /song/<en_name>` → linear scan over all songs → `song_details.html`
-- `GET /search?term=` → `validate_search_term` → substring match on lowercased `en_name`/`gr_name` → JSON (max 50)
-- `GET /images/<en_name>` → `artist.artist_img` bytes (PNG) → cached 30 days (SimpleCache, per process)
+- `GET /` → artists sorted by song count → `index.html`
+- `GET /artist/<slug>`, `/song/<slug>` → dict lookup in `Catalog`; old `/…/<en_name>` URLs 301 to the slug
+- `GET /search?term=&artist=&limit=` → `SearchIndex.search` → JSON list (artists then songs)
+- `GET /find?q=` → same index, HTML results page
+- `GET /images/<artist slug>` → BLOB from DB on demand, `lru_cache`d, ETag + 7-day cache
+- `/healthz`, `/robots.txt`, `/sitemap.xml`
 
-## Data model
+## Data model (schema version 2, `PRAGMA user_version`)
 | Entity | Table | Key relations | Owner module |
 |---|---|---|---|
-| Artist | `artists` (artist_id, en_name, gr_name, number_of_songs, artist_img BLOB) | 79 rows | `classes.py` |
-| Song | `songs` (song_id, artist_name, en_name, gr_name, video_id, demo_id) | 1048 rows; joined to artists by `artist_name = en_name` text, no FK, no indexes | `classes.py` |
+| Artist | `artists` (artist_id, slug UNIQUE, en_name UNIQUE, gr_name, artist_img BLOB) | 79 rows | `classes.py` |
+| Song | `songs` (song_id, artist_id FK, slug UNIQUE, en_name, gr_name, video_id, demo_id) | 1048 rows; `idx_songs_artist` | `classes.py` |
 
-`instance/images.db` and the empty file `instance/music` are not used by the app.
+`video_id` = original recording, `demo_id` = bouzouki sheet-music lesson (both YouTube ids).
+Slugs: `textkeys.make_slug` (≤3 significant words, ≤26 chars), duplicates get `-2`.
 
 ## Key modules
 | Path | Responsibility |
 |---|---|
-| `app.py` | Routes, input sanitizing, rate limits, cache, error handlers |
-| `classes.py` | `Artist`, `Song`, `import_db()` |
-| `logger.py` | Logger; level from `LOG_LEVEL` |
-| `templates/` | `base.html` (header + search JS), `index.html`, `artist_songs.html`, `song_details.html`, `error.html` |
-| `static/` | `css/styles.css` (empty), `js/artist_songs.js` (unused), `img/` logos |
-| `crawling_scripts/`, `db_games.py`, `automation.py`, `images.ipynb`, `jsons/`, `artists.csv`, `images/` | Offline data collection (Selenium, Patreon, YouTube); not imported by the app |
+| `app.py` | `create_app`: routes, CSP/security headers, rate limits, error handlers |
+| `classes.py` | `Artist`, `Song`, `Catalog`, `load_catalog`, `load_artist_image` |
+| `textkeys.py` | `phonetic_key` (Greek/Latin spelling → one key), `make_slug` |
+| `search.py` | `SearchIndex`: word/prefix/substring scoring, typo fallback (difflib) |
+| `db_migrate.py`, `migrations/` | Versioned, reversible schema changes |
+| `templates/`, `static/` | `static/fonts/` = Inter (OFL); `base.html` + `_macros.html`; `css/styles.css`; `js/search.js`, `artist.js`, `theme.js` |
+| `tests/` | pytest suite (runs against the real catalog and temp legacy DBs) |
+| `crawling_scripts/`, `db_games.py`, `automation.py`, `images.ipynb`, `jsons/`, `artists.csv`, `images/` | Offline data collection (Selenium); not imported by the app. `images/` is git-ignored |
 
 ## API surface
-5 routes + 3 error handlers, all in `app.py`. `/search` 30/min, `/images` 100/min,
-default 200/day and 50/hour per IP (in-memory limiter).
+5 routes + health/robots/sitemap in `app.py`. Limits: 600/hour default per IP, `/search`
+90/min, `/images` 300/min; static and `/healthz` exempt. In-memory storage unless
+`RATELIMIT_STORAGE_URI` is set (counts are per gunicorn worker).
 
 ## External services
 | Service | Used for | Config (env var names only — never values) |
 |---|---|---|
-| YouTube embeds | Song + sheet-music iframes | — |
-| jQuery / jQuery UI CDNs | Autocomplete | — |
+| YouTube (nocookie embeds) | Both videos on song pages | — |
+
+Env: `FLASK_SECRET_KEY`, `PORT`, `LOG_LEVEL`, `TRUST_PROXY_HOPS`, `DATABASE_PATH`, `RATELIMIT_STORAGE_URI`.
 
 ## Environments & deploy
 | Env | Branch | DB | Notes |
 |---|---|---|---|
-| local | — | `instance/music.db` (tracked in git) | `FLASK_SECRET_KEY`, `PORT`, `LOG_LEVEL` |
-| production | none yet (Railway planned) | same file, shipped with the code | `Procfile` runs `gunicorn server:app`; `server.py` does not exist |
+| local | — | `instance/music.db` (tracked) | `uv run python app.py` |
+| production | `master` (Railway planned, not connected) | same file, shipped with the code | `railway.json`: gunicorn `app:app`, health `/healthz`; set `TRUST_PROXY_HOPS=1` |
 
 ## Verification commands
-No automated checks. Smoke test: Flask `test_client()` GET `/`, `/artist/<name>`,
-`/song/<name>`, `/search?term=...`, `/images/<name>` → expect 200.
+`uv run pytest -q`. UI: run the app and check pages in a browser (headless Chrome
+screenshots were used; no browser test suite).

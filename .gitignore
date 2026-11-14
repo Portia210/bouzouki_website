@@ -111,6 +111,8 @@ backups/
 uploads/
 
 # ---- Project-specific -------------------------------------------------
+!instance/music.db
+images/
 
 # Project-specific (from the old .gitignore)
 *.ini

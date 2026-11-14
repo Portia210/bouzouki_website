@@ -1,255 +1,221 @@
-from flask import Flask, render_template, request, jsonify, send_file, abort
+import os
+from functools import lru_cache
+from hashlib import sha1
+from pathlib import Path
+
+from dotenv import load_dotenv
+from flask import Flask, Response, abort, jsonify, redirect, render_template, request, url_for
 from flask_bootstrap import Bootstrap5
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_caching import Cache
-from classes import import_db
-from dotenv import load_dotenv
-from io import BytesIO
-import os
-import re
-from urllib.parse import unquote, quote
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+from classes import Catalog, load_artist_image, load_catalog
 from logger import logger
+from search import MAX_QUERY_LEN, SearchIndex
+
 load_dotenv()
 
-app = Flask(__name__)
-
-# Require SECRET_KEY to be set in environment
-secret_key = os.getenv("FLASK_SECRET_KEY")
-if not secret_key:
-    logger.error("FLASK_SECRET_KEY environment variable not set")
-    raise RuntimeError("FLASK_SECRET_KEY environment variable is required for security")
-app.config['SECRET_KEY'] = secret_key
-
-Bootstrap5(app)
-
-# Configure caching
-cache = Cache(app, config={
-    'CACHE_TYPE': 'SimpleCache',
-    'CACHE_DEFAULT_TIMEOUT': 2592000  # 30 days in seconds
-})
-
-# Configure rate limiting
-limiter = Limiter(
-    app=app,
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
+CSP = (
+    "default-src 'self'; img-src 'self' data:; "
+    "frame-src https://www.youtube-nocookie.com; "
+    "base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
 )
 
-# Input validation functions
-def sanitize_route_param(param):
-    """Sanitize route parameters to prevent injection attacks"""
-    if not param:
-        logger.warning("Empty parameter provided")
-        return None
 
-    # URL decode the parameter
-    param = unquote(param)
-
-    # Remove any potentially dangerous characters (allow apostrophes for song/artist names)
-    param = re.sub(r'[<>"\/\\&]', '', param)
-
-    # Limit length to prevent DoS
-    if len(param) > 200:
-        logger.warning(f"Parameter too long: {len(param)} characters")
-        param = param[:200]
-
-    return param.strip()
-
-def validate_search_term(term):
-    """Validate and sanitize search terms"""
-    if not term or not isinstance(term, str):
-        logger.debug("Invalid or empty search term")
-        return None
-
-    # Limit search term length
-    if len(term) > 100:
-        logger.warning(f"Search term too long: {len(term)} characters")
-        return None
-
-    # Allow only alphanumeric, spaces, and some Greek characters
-    if not re.match(r'^[\w\s\u0370-\u03FF\u1F00-\u1FFF-]+$', term, re.UNICODE):
-        logger.warning(f"Invalid characters in search term: {term}")
-        return None
-
-    return term.strip()
-
-# Global variable to store all artists (loaded once at startup)
-try:
-    all_artists = import_db()
-    logger.info(f"Successfully loaded {len(all_artists)} artists from database")
-except Exception as e:
-    logger.error(f"Failed to load database: {e}")
-    all_artists = []
-
-@app.route("/")
-def home():
-    # Sort artists by the number of songs
-    sorted_artists = sorted(all_artists, key=lambda x: x.number_of_songs, reverse=True)
-    return render_template("index.html", all_artists=sorted_artists)
+def _sniff_image(data: bytes) -> str:
+    if data.startswith(b"\x89PNG"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8"):
+        return "image/jpeg"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return "application/octet-stream"
 
 
-@app.route("/artist/<artist_name>")
-def artist_songs(artist_name):
-    logger.info(f"Artist page requested: {artist_name}")
+def create_app(db_file: str | Path | None = None, secret_key: str | None = None) -> Flask:
+    app = Flask(__name__)
 
-    # Sanitize the artist name parameter
-    sanitized_name = sanitize_route_param(artist_name)
-    if not sanitized_name:
-        logger.warning(f"Invalid artist name parameter: {artist_name}")
-        abort(400)
+    secret_key = secret_key or os.getenv("FLASK_SECRET_KEY")
+    if not secret_key:
+        logger.error("FLASK_SECRET_KEY environment variable not set")
+        raise RuntimeError("FLASK_SECRET_KEY environment variable is required")
+    app.config["SECRET_KEY"] = secret_key
+    app.config["BOOTSTRAP_SERVE_LOCAL"] = True  # no CDN: faster, and the CSP stays strict
 
-    # Use a dictionary for efficient artist lookup
-    artist = next((artist for artist in all_artists if artist.en_name == sanitized_name), None)
-    if not artist:
-        logger.warning(f"Artist not found: {sanitized_name}")
-        abort(404)
+    # Behind Railway's proxy the client IP and scheme arrive in X-Forwarded-* headers.
+    proxy_hops = int(os.getenv("TRUST_PROXY_HOPS", "0"))
+    if proxy_hops:
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=proxy_hops, x_proto=proxy_hops, x_host=proxy_hops)
 
-    try:
+    Bootstrap5(app)
+
+    limiter = Limiter(
+        key_func=get_remote_address,
+        default_limits=["600 per hour"],
+        storage_uri=os.getenv("RATELIMIT_STORAGE_URI", "memory://"),
+    )
+    limiter.init_app(app)
+
+    @limiter.request_filter
+    def _exempt():
+        return request.endpoint in ("healthz",) or (request.endpoint or "").endswith("static")
+
+    catalog: Catalog = load_catalog(db_file)
+    index = SearchIndex(catalog)
+    app.extensions["catalog"] = catalog
+    db_source = db_file
+
+    @lru_cache(maxsize=128)
+    def artist_image(artist_id: int):
+        data = load_artist_image(artist_id, db_source)
+        if not data:
+            return None
+        return data, _sniff_image(data), sha1(data).hexdigest()
+
+    # ---------------------------------------------------------------- pages
+    @app.route("/")
+    def home():
+        artists = sorted(catalog.artists, key=lambda a: (-a.number_of_songs, a.en_name))
+        return render_template("index.html", artists=artists, song_count=len(catalog.songs))
+
+    @app.route("/artist/<slug>")
+    def artist_songs(slug):
+        artist = catalog.artist_by_slug.get(slug)
+        if not artist:
+            legacy = catalog.artist_by_name.get(slug)
+            if legacy:
+                return redirect(url_for("artist_songs", slug=legacy.slug), 301)
+            abort(404)
         return render_template("artist_songs.html", artist=artist)
-    except Exception as e:
-        logger.error(f"Error rendering artist page for {sanitized_name}: {e}")
-        abort(500)
 
-
-@app.route("/search", methods=["GET"])
-@limiter.limit("30 per minute")
-def search_songs():
-    try:
-        term = request.args.get("term")
-        logger.debug(f"Search request received: {term}")
-
-        # Validate and sanitize the search term
-        sanitized_term = validate_search_term(term)
-        if not sanitized_term:
-            logger.debug(f"Invalid search term rejected: {term}")
-            return jsonify([])
-
-        logger.info(f"Processing search for: {sanitized_term}")
-        results = []
-
-        # Use the global all_artists variable (no need to fetch from database again)
-        if not all_artists:
-            logger.warning("No artists available for search")
-            return jsonify([])
-
-        for artist in all_artists:
-            for song in artist.songs:
-                # Check if the term is in either the English or Greek song name
-                if (sanitized_term.lower() in song.en_name.lower() or
-                    sanitized_term.lower() in song.gr_name.lower()):
-                    results.append({
-                        'label': song.en_name,  # Display original name with special characters
-                        'value': song.en_name,
-                        'url': f"/song/{quote(song.en_name)}"
-                    })
-
-                    # Limit results to prevent performance issues
-                    if len(results) >= 50:
-                        logger.debug("Search results limited to 50 items")
-                        break
-            if len(results) >= 50:
-                break
-
-        logger.info(f"Search for '{sanitized_term}' returned {len(results)} results")
-        return jsonify(results)
-    except Exception as e:
-        logger.error(f"Error in search route: {e}")
-        return jsonify([])
-
-
-@app.route("/song/<song_name>")
-def view_song(song_name):
-    logger.info(f"Song page requested: {song_name}")
-
-    # Sanitize the song name parameter
-    sanitized_name = sanitize_route_param(song_name)
-    if not sanitized_name:
-        logger.warning(f"Invalid song name parameter: {song_name}")
-        abort(400)
-
-    # Find the song from the list of artists
-    song = None
-    artist_obj = None
-    for artist in all_artists:
-        for s in artist.songs:
-            if s.en_name == sanitized_name:
-                song = s
-                artist_obj = artist
-                break
-        if song:
-            break
-
-    if not song:
-        logger.warning(f"Song not found: {sanitized_name}")
-        abort(404)
-
-    try:
-        return render_template("song_details.html", artist=artist_obj, song=song)
-    except Exception as e:
-        logger.error(f"Error rendering song page for {sanitized_name}: {e}")
-        abort(500)
-
-
-@app.route("/images/<artist_name>")
-@limiter.limit("100 per minute")  # Rate limit image requests to prevent abuse
-@cache.cached(timeout=2592000)  # Cache for 30 days
-def images(artist_name):
-    # Sanitize the artist name parameter
-    sanitized_name = sanitize_route_param(artist_name)
-    if not sanitized_name:
-        logger.warning(f"Invalid artist name parameter for image: {artist_name}")
-        abort(400)
-
-    artist = next((artist for artist in all_artists if artist.en_name == sanitized_name), None)
-    if not artist or not artist.artist_img:
-        logger.warning(f"Artist image not found: {sanitized_name}")
-        abort(404)
-
-    try:
-        # Add security headers for image serving
-        response = send_file(
-            BytesIO(artist.artist_img),
-            mimetype='image/png',
-            as_attachment=False,
-            download_name=f"{sanitized_name}.png"
+    @app.route("/song/<slug>")
+    def view_song(slug):
+        song = catalog.song_by_slug.get(slug)
+        if not song:
+            legacy = catalog.song_by_name.get(slug)
+            if legacy:
+                return redirect(url_for("view_song", slug=legacy.slug), 301)
+            abort(404)
+        siblings = song.artist.songs
+        pos = siblings.index(song)
+        return render_template(
+            "song_details.html",
+            song=song,
+            artist=song.artist,
+            prev_song=siblings[pos - 1] if pos > 0 else None,
+            next_song=siblings[pos + 1] if pos + 1 < len(siblings) else None,
         )
-        response.headers['Content-Security-Policy'] = "default-src 'none'"
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-        response.headers['Cache-Control'] = 'public, max-age=2592000, immutable'  # Cache for 30 days
+
+    @app.route("/find")
+    def find():
+        term = (request.args.get("q") or "")[:MAX_QUERY_LEN].strip()
+        artists, songs = index.search(term, song_limit=100, artist_limit=10)
+        return render_template("search_results.html", term=term, artists=artists, songs=songs)
+
+    # ------------------------------------------------------------------ API
+    @app.route("/search")
+    @limiter.limit("90 per minute")
+    def search_songs():
+        term = (request.args.get("term") or "").strip()
+        if not term or len(term) > MAX_QUERY_LEN:
+            return jsonify([])
+        only_artist = catalog.artist_by_slug.get(request.args.get("artist", ""))
+        if request.args.get("artist") and not only_artist:
+            return jsonify([])
+        try:
+            limit = min(max(int(request.args.get("limit", 8)), 1), 200)
+        except ValueError:
+            limit = 8
+        artists, songs = index.search(term, song_limit=limit, artist_limit=4, artist=only_artist)
+        results = [
+            {"type": "artist", "slug": a.slug, "label": a.en_name, "label_gr": a.gr_name,
+             "sub": f"{a.number_of_songs} songs", "url": url_for("artist_songs", slug=a.slug)}
+            for a in artists
+        ] + [
+            {"type": "song", "slug": s.slug, "label": s.en_name, "label_gr": s.gr_name,
+             "sub": s.artist.en_name, "url": url_for("view_song", slug=s.slug)}
+            for s in songs
+        ]
+        return jsonify(results)
+
+    @app.route("/images/<slug>")
+    @limiter.limit("300 per minute")
+    def images(slug):
+        artist = catalog.artist_by_slug.get(slug)
+        if not artist or not artist.has_image:
+            abort(404)
+        loaded = artist_image(artist.artist_id)
+        if not loaded:
+            abort(404)
+        data, mimetype, etag = loaded
+        if request.headers.get("If-None-Match") == f'"{etag}"':
+            return Response(status=304, headers={"ETag": f'"{etag}"'})
+        return Response(data, mimetype=mimetype, headers={
+            "ETag": f'"{etag}"',
+            "Cache-Control": "public, max-age=604800",
+            "X-Content-Type-Options": "nosniff",
+        })
+
+    # ----------------------------------------------------------------- misc
+    @app.route("/healthz")
+    def healthz():
+        return "ok"
+
+    @app.route("/robots.txt")
+    def robots():
+        return Response(f"User-agent: *\nAllow: /\nSitemap: {url_for('sitemap', _external=True)}\n", mimetype="text/plain")
+
+    @app.route("/sitemap.xml")
+    def sitemap():
+        urls = [url_for("home", _external=True)]
+        urls += [url_for("artist_songs", slug=a.slug, _external=True) for a in catalog.artists]
+        urls += [url_for("view_song", slug=s.slug, _external=True) for s in catalog.songs]
+        body = "".join(f"<url><loc>{u}</loc></url>" for u in urls)
+        return Response(
+            f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>',
+            mimetype="application/xml",
+        )
+
+    @app.after_request
+    def security_headers(response):
+        response.headers.setdefault("Content-Security-Policy", CSP)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        if request.is_secure:
+            response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
         return response
-    except Exception as e:
-        logger.error(f"Error serving image for {artist_name}: {e}")
-        abort(500)
 
-# Error handlers
-@app.errorhandler(400)
-def bad_request(error):
-    logger.warning(f"400 Bad Request: {error}")
-    return render_template('error.html',
-                         error_code=400,
-                         error_message="Bad Request - Invalid input provided"), 400
+    # --------------------------------------------------------------- errors
+    def _error(code: int, message: str):
+        return render_template("error.html", error_code=code, error_message=message), code
 
-@app.errorhandler(404)
-def not_found(error):
-    logger.info(f"404 Not Found: {error}")
-    return render_template('error.html',
-                         error_code=404,
-                         error_message="Page Not Found"), 404
+    @app.errorhandler(400)
+    def bad_request(error):
+        return _error(400, "Bad Request")
 
-@app.errorhandler(500)
-def internal_error(error):
-    logger.error(f"500 Internal Server Error: {error}")
-    return render_template('error.html',
-                         error_code=500,
-                         error_message="Internal Server Error"), 500
+    @app.errorhandler(404)
+    def not_found(error):
+        logger.info(f"404 {request.path}")
+        return _error(404, "Page Not Found")
 
-if __name__ == '__main__':
-    try:
-        port = int(os.environ.get("PORT", 5000))
-        logger.info(f"Starting Rebetiko Music application on port {port}")
-        app.run(host="0.0.0.0", port=port)
-    except Exception as e:
-        logger.critical(f"Failed to start application: {e}")
-        raise
+    @app.errorhandler(429)
+    def too_many(error):
+        return _error(429, "Too Many Requests")
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        logger.error(f"500 on {request.path}: {error}")
+        return _error(500, "Internal Server Error")
+
+    return app
+
+
+# Module-level instance for `gunicorn app:app`. Skipped when imported for tests that
+# build their own app (set SKIP_DEFAULT_APP=1).
+app = None if os.getenv("SKIP_DEFAULT_APP") else create_app()
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    logger.info(f"Starting on port {port}")
+    app.run(host="0.0.0.0", port=port)

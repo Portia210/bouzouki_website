@@ -1,53 +1,39 @@
 {% extends 'base.html' %}
+{% from '_macros.html' import avatar, search_form %}
 
-{% block title %}All Artists{% endblock %}
+{% block title %}Rebetiko Music — songs and bouzouki lessons{% endblock %}
+
+{% block header_search %}{% endblock %}
 
 {% block content %}
-
-<main>
-
-
-    <section class="py-2 py-sm-3 text-center container">
-        <div class="row py-lg-3">
-            <div class="col-lg-6 col-md-8 mx-auto">
-                <!-- <h1 class="fw-light">Discover the best greek music</h1> -->
-                <p class="lead text-muted m-0">Sheet music for the beloved Rebetiko songs.
-                </p>
-
-            </div>
-        </div>
-    </section>
-
-
-    <div class="album py-3 bg-light">
-        <div class="container px-0 px-sm-auto">
-
-            <div class="row  row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3 ">
-
-                {% for artist in all_artists %}
-                <div class="col d-flex justify-content-center">
-                    <div class="card shadow-sm" style="height: 320px; width: 220px">
-                        <img class="bd-placeholder-img card-img-top"  style="height: 205px; object-fit: cover; width: 100%;" src="{{ url_for('images', artist_name = artist.en_name) }}" alt="Thumbnail">
-
-                        <div class="card-body">
-                            <p class="card-text">{{artist.en_name}}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="btn-group">
-                                    <a href="{{url_for('artist_songs',  artist_name = artist.en_name)}}"
-                                        class="btn btn-sm btn-outline-primary">View songs</a>
-                                </div>
-                                <small class="text-muted">{{ artist.number_of_songs}} songs</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-
-            </div>
-        </div>
+<section class="hero">
+    <div class="container-xxl">
+        <p class="eyebrow">{{ song_count }} songs · {{ artists|length }} artists</p>
+        <h1>Rebetiko songs<br>for the <span class="grad">bouzouki</span></h1>
+        <p class="lead">Watch the original recording, then learn it from the sheet-music lesson.</p>
+        {{ search_form(big=True, placeholder='Search songs or artists') }}
+        <p class="hint">Spell it however you like — <em>mou</em>, <em>moy</em> and <em>μου</em> find the same songs.</p>
+        <p class="chips">
+            <span>Try</span>
+            {% for q in ['mavra matia', 'zeimpekiko', 'tsitsanis', 'μπουζούκι'] %}
+            <a href="{{ url_for('find', q=q) }}">{{ q }}</a>
+            {% endfor %}
+        </p>
     </div>
+</section>
 
-</main>
-
-
+<section class="container-xxl py-4 py-md-5">
+    <h2 class="section-title">Artists</h2>
+    <ul class="artist-grid">
+        {% for artist in artists %}
+        <li>
+            <a class="artist-card" href="{{ url_for('artist_songs', slug=artist.slug) }}">
+                {{ avatar(artist) }}
+                <span class="artist-name">{{ artist.en_name }}</span>
+                <span class="artist-count">{{ artist.number_of_songs }} song{{ '' if artist.number_of_songs == 1 else 's' }}</span>
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</section>
 {% endblock %}

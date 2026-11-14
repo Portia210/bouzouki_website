@@ -13,6 +13,13 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
     - Traps / decisions: <what the next session must know>
     - Next: <what's owed, open questions for the developer>
 
+## 2026-11-14 — Search, DB, redesign, Railway prep
+- Changed: phonetic search (`textkeys.py`, `search.py`), schema v2 via `db_migrate.py` (slugs, artist FK, indexes), `create_app` refactor with CSP/ETag/health/sitemap, new Bootstrap-based UI with vanilla JS (jQuery removed), Procfile/`railway.json`, `images/` untracked, pytest suite.
+- Verified: `uv run pytest -q` (37 pass); migration round trip on the real DB copy; gunicorn start + `/healthz`; headless-Chrome screenshots (desktop, mobile, dark) and scripted search/filter/player checks.
+- NOT verified: real Railway deploy; real YouTube playback (embeds were blank in headless); Safari/Firefox; keyboard/screen-reader pass.
+- Traps / decisions: slugs are short (≤3 words), old name URLs 301 to them; `number_of_songs` and `artist_name` columns dropped (derivable); `.claude/settings.json` allow-list not extended (blocked by the auto-mode classifier).
+- Next: connect Railway (`TRUST_PROXY_HOPS=1`, `FLASK_SECRET_KEY`); decide if `images/` should be deleted from disk.
+
 ## 2026-11-14 — Project bootstrap
 - Changed: added the .claude/ scaffold, merged CLAUDE.md (facts filled, old text moved to ARCHITECTURE.md), .gitignore, .editorconfig, .gitattributes, .env.example.
 - Verified: —

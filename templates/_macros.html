@@ -1,0 +1,28 @@
+{# Artist portrait, square with rounded corners. #}
+{% macro avatar(artist, large=False) %}
+<span class="avatar{{ ' avatar-lg' if large }}" aria-hidden="true">
+    {% if artist.has_image %}
+    <img src="{{ url_for('images', slug=artist.slug) }}" alt="" loading="lazy" width="180" height="180">
+    {% else %}
+    <span class="avatar-initial">{{ artist.en_name[0] }}</span>
+    {% endif %}
+</span>
+{% endmacro %}
+
+{% macro player(video_id, title, element_id='') %}
+<div class="ratio ratio-16x9 player-frame">
+    <iframe {% if element_id %}id="{{ element_id }}" {% endif %}src="https://www.youtube-nocookie.com/embed/{{ video_id }}"
+        title="{{ title }}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"
+        allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+{% endmacro %}
+
+{% macro search_form(big=False, placeholder='Search songs or artists…') %}
+<form class="search js-search{{ ' search-lg' if big }}" action="{{ url_for('find') }}" role="search" autocomplete="off">
+    <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <input type="search" name="q" class="form-control" placeholder="{{ placeholder }}"
+        aria-label="Search songs or artists" role="combobox" aria-expanded="false" aria-autocomplete="list" maxlength="100">
+    <button class="btn btn-primary" type="submit">Search</button>
+    <ul class="search-results" role="listbox" hidden></ul>
+</form>
+{% endmacro %}
