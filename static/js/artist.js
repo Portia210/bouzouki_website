@@ -104,6 +104,37 @@
         frame.textContent = "";
     }
 
+    // ---- sheet-music PDFs (admin only) ----------------------------------------------
+    // The page is the same for everybody (it may sit in a shared cache), so whether the
+    // visitor is the admin is asked separately. Until then, and for everyone else, the buttons
+    // show a lock and lead to the sign-in page, which returns to this song.
+    var pdfBox = byId("player-pdfs");
+    var pdfButtons = [[byId("pdf-sheet"), "sheet"], [byId("pdf-tab"), "tabPdf"]];
+    var isAdmin = false;
+
+    function showPdfs(row) {
+        if (!pdfBox || !row) return;
+        var any = false;
+        pdfButtons.forEach(function (pair) {
+            var link = pair[0], url = row.dataset[pair[1]];
+            link.hidden = !url;
+            if (!url) return;
+            any = true;
+            link.href = isAdmin ? url : "/admin?next=" + encodeURIComponent(location.pathname + "#" + row.dataset.slug);
+            link.target = isAdmin ? "_blank" : "_self";
+            link.rel = "noopener";
+        });
+        pdfBox.hidden = !any;
+        panel.dataset.admin = String(isAdmin);
+    }
+
+    if (pdfBox && list.querySelector("[data-sheet], [data-tab-pdf]")) {
+        fetch("/admin/session", { cache: "no-store" })
+            .then(function (r) { return r.ok ? r.json() : { admin: false }; })
+            .then(function (data) { isAdmin = !!data.admin; showPdfs(current()); })
+            .catch(function () { /* stays locked */ });
+    }
+
     function showTab(row) {
         tabs.forEach(function (t) { t.setAttribute("aria-selected", String(t.dataset.tab === tab)); });
         if (!row) return;
@@ -138,6 +169,7 @@
         if (!keepTitle) document.title = row.dataset.title + " — " + list.dataset.artistName + " — Bouzouki Rebetico";
         place();  // move first: moving an iframe reloads it
         showTab(row);
+        showPdfs(row);
     }
 
     function close() {

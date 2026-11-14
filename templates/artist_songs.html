@@ -37,7 +37,9 @@
                     <a class="song-row" href="{{ url_for('artist_songs', slug=artist.slug, _anchor=song.slug) }}"
                         data-slug="{{ song.slug }}" data-original="{{ song.video_id }}" data-lesson="{{ song.demo_id }}"
                         data-title="{{ song.en_name }}" data-title-gr="{{ song.gr_name }}"
-                        data-query="{{ song.gr_name ~ ' ' ~ artist.gr_name }}">
+                        data-query="{{ song.gr_name ~ ' ' ~ artist.gr_name }}"
+                        {%- if admin_enabled and song.score_key %} data-sheet="{{ url_for('pdf', song_id=song.song_id, kind='sheet') }}"{% endif %}
+                        {%- if admin_enabled and song.tab_key %} data-tab-pdf="{{ url_for('pdf', song_id=song.song_id, kind='tab') }}"{% endif %}>
                         <span class="song-title">{{ song.en_name }}<small>{{ song.gr_name }}</small></span>
                         <span class="song-go" aria-hidden="true">→</span>
                     </a>
@@ -62,6 +64,10 @@
                         <button type="button" role="tab" class="player-tab" id="tab-original" data-tab="original" aria-selected="false">Original recording</button>
                     </div>
                     <a class="player-yt" id="player-yt" href="https://www.youtube.com/watch?v={{ first.demo_id }}" target="_blank" rel="noopener">Open on YouTube ↗</a>
+                </div>
+                <div class="player-pdfs" id="player-pdfs" hidden>
+                    <a class="pdf-btn" id="pdf-sheet" hidden><svg class="icon-lock" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.500 10.500V8a3.500 3.500 0 0 1 7 0v2.500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg class="icon-doc" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 3.500h6.500L18 8v12.500H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13 3.500V8.500h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Sheet music</span></a>
+                    <a class="pdf-btn" id="pdf-tab" hidden><svg class="icon-lock" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.500 10.500V8a3.500 3.500 0 0 1 7 0v2.500" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><svg class="icon-doc" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M7 3.500h6.500L18 8v12.500H7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M13 3.500V8.500h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>Tablature</span></a>
                 </div>
                 <div class="player-frame" id="player-frame"></div>
                 <p class="player-more"><a id="player-more" target="_blank" rel="noopener"

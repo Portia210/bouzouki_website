@@ -6,13 +6,12 @@ keeps them). Standing rules go in CLAUDE.md or GOTCHAS.md, not here.
 
 Entry template (copy it, keep the "NOT verified" line — write "nothing" if so):
 
-    ## 2026-11-14 — PDF sheet music: found, audited, plan written (nothing uploaded)
-- Changed: only docs + `scripts/pdf_audit/` (`manifest.ps1`, `audit.py`). Full findings and design: `.claude/plans/pdf-upload.md`; tasks P1–P3 and open decisions D1–D4 in ROADMAP.
-- Found: the Patreon PDFs are at `D:\מסמכים\python-downloads` (D: is NOT mounted in WSL; use `powershell.exe`). 79 artist folders, 1048 song folders = the 1048 DB songs, 1976 PDFs (~740 MB), 2 per song (sheet + `ΤΑΜΠΛΑΤΟΥΡΑ` tab), plus mp3/mid/sib. 1046 folders match a DB song by `demo_id` (from `video link.txt`), 1045 also by phonetic name; 3 exceptions by name; 56 songs have no PDF.
-- Verified: `uv run python scripts/pdf_audit/audit.py <manifest.json>` reproduces every number (manifest made with `manifest.ps1`, ~27 MB, not committed).
-- NOT verified: anything on R2 (the developer has a bucket; name, public/private, keys not known). No file was copied, uploaded or changed.
-- Traps / decisions: R2 credentials only as env vars on the developer's Windows machine, never in chat; the PDFs are members-only Patreon content (copyright question, D1); object keys ASCII (`pdf/<song-slug>.pdf`), Greek only in `Content-Disposition`.
-- Next: developer answers D1–D4, then P1 (upload script with `plan` dry run first).
+## 2026-11-14 — Admin sign-in and PDF buttons built; upload script still to do
+- Changed: schema v4 (`songs.score_key/tab_key`, empty), `/admin` password login (ENV `ADMIN_PASSWORD`, 7-day session renewed only by `/admin/session` and `/pdf`), `/pdf/<song_id>/<sheet|tab>` → 5-min R2 presigned URL, `storage.py` (boto3), lock/document buttons in the player, search results now close after a same-page click. Plan: `.claude/plans/pdf-upload.md`.
+- Settled with the developer: private bucket `bouzouki-rebetiko` (no public URL, no custom domain), push to `master` freely, DB edited locally then committed. Folders and DB artists match 79/79.
+- Verified: 65 tests; in headless Chrome on a scratch DB with fake keys: lock → `/admin` → back to the song → document icon; search fix; no R2 configured → generic 503. Code review (security skill) done and its findings fixed.
+- NOT verified: any real R2 access (no keys yet) and that R2 honours `response-content-disposition` on presigned URLs; behaviour on Railway.
+- Next: P1 `scripts/pdf_sync.py` (plan/apply/verify). Developer first creates an R2 token limited to the bucket and sets `R2_*` + `ADMIN_PASSWORD` in `.env` (and later on Railway; `TRUST_PROXY_HOPS=1` is already set there).
 
 ## 2026-11-14 — Railway: region and edge cache (speed)
 - Changed (in Railway, not in git): service `web` moved from us-west2 to `europe-west4-drams3a` (Amsterdam), edge CDN enabled (`htmlCaching auto`, purge all on deploy). Cause of the slowness was distance (~0.45 s per request), not image size (thumbnails ~12 KB).

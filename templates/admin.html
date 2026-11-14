@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin — Bouzouki Rebetico{% endblock %}
+{% block description %}Admin sign-in.{% endblock %}
+
+{% block content %}
+<div class="container-xxl py-5">
+    <div class="admin-card">
+        {% if signed_in %}
+        <h1 class="h4 mb-2">You're signed in</h1>
+        <p class="text-secondary">Sheet-music and tablature PDFs are open for you. You'll be signed out after a week without a visit.</p>
+        <form method="post" action="{{ url_for('admin_logout') }}" class="d-flex gap-2 flex-wrap">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <a class="btn btn-primary" href="{{ url_for('home') }}">Back to the site</a>
+            <button type="submit" class="btn btn-outline-secondary">Sign out</button>
+        </form>
+        {% else %}
+        <h1 class="h4 mb-2">Admin sign-in</h1>
+        <p class="text-secondary">The sheet-music PDFs are for the site's admin only.</p>
+        {% if failed %}<p class="admin-error" role="alert">Wrong password.</p>{% endif %}
+        <form method="post" action="{{ url_for('admin') }}" class="d-grid gap-3">
+            <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ next }}">
+            <label class="visually-hidden" for="admin-password">Password</label>
+            <input type="password" id="admin-password" name="password" class="form-control" required autofocus
+                autocomplete="current-password" placeholder="Password">
+            <button type="submit" class="btn btn-primary">Sign in</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

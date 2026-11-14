@@ -19,6 +19,10 @@ being true.
 | The sticky video panel needs its column (`#player-home`) to be as tall as the song list | With `align-items: start` on `.artist-layout` the column shrank to the panel's height and the video scrolled away on long artists | Keep grid items stretched; no `overflow` on ancestors of the panel |
 | Windows D: drive is not mounted in WSL (`/mnt/d` empty); `C:` is `/mnt/c` | `find`/`os.walk` on `/mnt/c` is very slow (9p) and never sees D: | Use `powershell.exe -File <script>` (native, fast; write a UTF-8 BOM `.ps1`, `[Console]::OutputEncoding = UTF8` for Greek/Hebrew names) or `sudo mount -t drvfs D: /mnt/d` |
 | Migrations rebuild tables | DB file doubles in size | `db_migrate.py` runs `VACUUM` afterwards |
+| Public pages must never get a `Set-Cookie` | The Railway edge cache could store the admin's cookie and hand it to visitors | `SESSION_REFRESH_EACH_REQUEST=False`; only `/admin*` and `/pdf*` (no-store) touch the session. `test_signed_in_admin_gets_no_cookie…` guards it |
+| Login rate limit uses the client IP | Without `TRUST_PROXY_HOPS=1` on Railway everyone shares the proxy IP (5 wrong tries/min lock the admin out) | Keep `TRUST_PROXY_HOPS=1`; counters are per gunicorn worker (2), so the real limit is 10/min |
+| `ADMIN_PASSWORD` changes sign everyone out | Intended: the session stores an HMAC of the password | Rotate the password to revoke sessions |
+| Reopening the same URL with only a `#hash` in the browser doesn't reload | Stale HTML while testing | `location.reload()` |
 
 ## Known gaps
 | Gap | Impact | Tracked in |

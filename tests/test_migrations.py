@@ -35,22 +35,22 @@ def legacy_db(tmp_path):
 
 
 def test_up_adds_slugs_fk_and_fixes_names(legacy_db):
-    assert db_migrate.migrate(legacy_db, "up") == 3
+    assert db_migrate.migrate(legacy_db, "up") == 4
     songs = rows(legacy_db, "songs", "song_id")
     assert [s[2] for s in songs] == ["pyretos", "pyretos-2", "adika-katakrinoyn"]
     assert songs[0][1] == 1 and songs[1][1] == 2  # artist_id
     assert songs[2][4] == "αδικα με κατακρινουν"  # Latin 'i' replaced
     conn = sqlite3.connect(legacy_db)
     assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 4
 
 
 def test_round_trip_restores_original_data(legacy_db):
     before = (rows(legacy_db, "artists", "artist_id"), rows(legacy_db, "songs", "song_id"))
     db_migrate.migrate(legacy_db, "up")
-    assert db_migrate.migrate(legacy_db, "down", 3) == 0
+    assert db_migrate.migrate(legacy_db, "down", 4) == 0
     assert (rows(legacy_db, "artists", "artist_id"), rows(legacy_db, "songs", "song_id")) == before
-    assert db_migrate.migrate(legacy_db, "up") == 3
+    assert db_migrate.migrate(legacy_db, "up") == 4
 
 
 def test_orphan_song_aborts_and_leaves_db_untouched(legacy_db):
@@ -77,3 +77,15 @@ def test_thumbnail_is_created_for_valid_images_and_skipped_for_broken_ones(legac
     conn = sqlite3.connect(legacy_db)
     thumbs = dict(conn.execute("SELECT artist_id, artist_thumb FROM artists").fetchall())
     assert thumbs[2][:4] == b"RIFF" and thumbs[1] is None
+
+
+def test_pdf_key_columns_start_empty_and_round_trip(legacy_db):
+    db_migrate.migrate(legacy_db, "up")
+    conn = sqlite3.connect(legacy_db)
+    assert conn.execute("SELECT score_key, tab_key FROM songs").fetchall() == [(None, None)] * 3
+    conn.execute("UPDATE songs SET score_key = 'pdf/1/sheet.pdf' WHERE song_id = 1")
+    conn.commit()
+    conn.close()
+    assert db_migrate.migrate(legacy_db, "down", 1) == 3  # keys go, the rest of the row stays
+    assert [r[0] for r in rows(legacy_db, "songs", "song_id")] == [1, 2, 4]
+    assert db_migrate.migrate(legacy_db, "up") == 4

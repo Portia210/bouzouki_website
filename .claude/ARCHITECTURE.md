@@ -16,15 +16,18 @@ Pages are Jinja2 + Bootstrap 5.3 (served locally, no CDN) + small vanilla JS fil
 - `GET /search?term=&artist=&limit=` → `SearchIndex.search` → JSON list (artists then songs)
 - `GET /find?q=` → same index, HTML results page (no-JS / no-match fallback; the search box opens the best match directly)
 - `GET /images/<artist slug>` → BLOB from DB on demand, `lru_cache`d, ETag + 7-day cache
+- `GET/POST /admin` (password-only sign-in, `?next=` same-site paths only), `POST /admin/logout`, `GET /admin/session` → `{admin: bool}` (no-store). Session = signed cookie, 7 days since the last visit. No `ADMIN_PASSWORD` → all admin/PDF routes 404 and no PDF buttons are rendered
+- `GET /pdf/<song_id>/<sheet|tab>` → not admin: 302 to `/admin?next=…` (before any lookup); admin: 302 to a 5-minute R2 presigned URL (inline, filename from the *current* names); no key → 404; R2 env missing → 503
 - `/healthz`, `/robots.txt`, `/sitemap.xml`
 
-## Data model (schema version 2, `PRAGMA user_version`)
+## Data model (schema version 4, `PRAGMA user_version`)
 | Entity | Table | Key relations | Owner module |
 |---|---|---|---|
 | Artist | `artists` (artist_id, slug UNIQUE, en_name UNIQUE, gr_name, artist_img BLOB) | 79 rows | `classes.py` |
-| Song | `songs` (song_id, artist_id FK, slug UNIQUE, en_name, gr_name, video_id, demo_id) | 1048 rows; `idx_songs_artist` | `classes.py` |
+| Song | `songs` (song_id, artist_id FK, slug UNIQUE, en_name, gr_name, video_id, demo_id, score_key, tab_key) | 1048 rows; `idx_songs_artist` | `classes.py` |
 
 `video_id` = original recording, `demo_id` = bouzouki sheet-music lesson (both YouTube ids).
+`score_key`/`tab_key` = R2 object keys of the sheet/tab PDF (`pdf/<song_id>/sheet.pdf`, `…/tab.pdf`), derived from `song_id` only, never from names; NULL = no PDF. The page HTML never contains a key.
 Slugs: `textkeys.make_slug` (≤3 significant words, ≤26 chars), duplicates get `-2`.
 
 ## Key modules
@@ -32,6 +35,7 @@ Slugs: `textkeys.make_slug` (≤3 significant words, ≤26 chars), duplicates ge
 |---|---|
 | `app.py` | `create_app`: routes, CSP/security headers, rate limits, error handlers |
 | `classes.py` | `Artist`, `Song`, `Catalog`, `load_catalog`, `load_artist_image` |
+| `storage.py` | R2 client (boto3, lazy import), `presigned_url`, `content_disposition` |
 | `textkeys.py` | `phonetic_key` (Greek/Latin spelling → one key), `make_slug` |
 | `search.py` | `SearchIndex`: word/prefix/substring scoring, typo fallback (difflib) |
 | `db_migrate.py`, `migrations/` | Versioned, reversible schema changes |
@@ -48,8 +52,9 @@ Slugs: `textkeys.make_slug` (≤3 significant words, ≤26 chars), duplicates ge
 | Service | Used for | Config (env var names only — never values) |
 |---|---|---|
 | YouTube (nocookie embeds) | Both videos on song pages | — |
+| Cloudflare R2 (private bucket `bouzouki-rebetiko`) | Sheet-music/tab PDFs, served only via presigned URLs to the admin | `R2_ACCOUNT_ID`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` |
 
-Env: `FLASK_SECRET_KEY`, `PORT`, `LOG_LEVEL`, `TRUST_PROXY_HOPS`, `DATABASE_PATH`, `RATELIMIT_STORAGE_URI`.
+Env: `ADMIN_PASSWORD`, `FLASK_SECRET_KEY`, `PORT`, `LOG_LEVEL`, `TRUST_PROXY_HOPS`, `DATABASE_PATH`, `RATELIMIT_STORAGE_URI`.
 
 ## Environments & deploy
 | Env | Branch | DB | Notes |
@@ -64,5 +69,5 @@ screenshots were used; no browser test suite).
 ## Railway (production) — facts
 Project `bouzouki-website` id `75ef6876-6dc5-40e0-9f00-445cc86137b1`, environment `production` `0b99f4ed-88e8-4c03-8ce9-12bbd6b7a466`, service `web` `6f318ef4-dd9c-4b20-939e-41cbc31b6e74`. Builder RAILPACK, start `gunicorn app:app --bind 0.0.0.0:$PORT --workers 2`, health `/healthz`, region `europe-west4-drams3a`, edge CDN on. Variables: `FLASK_SECRET_KEY`, `TRUST_PROXY_HOPS=1`. Settings live in Railway, not in git (`railway.json`/`Procfile` mirror them). Every push to `master` redeploys; expect a short "Application not found" while it swaps.
 
-## Planned: sheet-music PDFs on Cloudflare R2
-Not built. Plan, audit numbers and decisions: `.claude/plans/pdf-upload.md`; audit tooling: `scripts/pdf_audit/`.
+## Sheet-music PDFs on Cloudflare R2
+Built: schema, admin sign-in, `/pdf`, buttons (lock until signed in; `artist.js` asks `/admin/session`, so the cached HTML is identical for everyone). Not built: `scripts/pdf_sync.py` (upload/verify) and the real upload — plan and decisions in `.claude/plans/pdf-upload.md`.

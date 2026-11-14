@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "bootstrap-flask>=2.5.0",
+    "boto3>=1.44.3",
     "flask>=3.1.2",
     "flask-limiter>=4.0.0",
     "gunicorn>=27.0.1",
@@ -21,3 +22,4 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]  # `uv run pytest` doesn't put the project root on sys.path, so conftest couldn't import app

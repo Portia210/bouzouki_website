@@ -1,15 +1,19 @@
+import hmac
 import os
+import secrets
+from datetime import timedelta
 from functools import lru_cache
 from hashlib import sha1
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, Response, abort, jsonify, redirect, render_template, request, send_from_directory, url_for
+from flask import Flask, Response, abort, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 from flask_bootstrap import Bootstrap5
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+import storage
 from classes import Catalog, load_artist_image, load_catalog
 from logger import logger
 from search import MAX_QUERY_LEN, SearchIndex
@@ -34,7 +38,19 @@ def _sniff_image(data: bytes) -> str:
     return "application/octet-stream"
 
 
-def create_app(db_file: str | Path | None = None, secret_key: str | None = None) -> Flask:
+def _safe_next(value: str | None, fallback: str) -> str:
+    """Only same-site paths: `//host` or `/\\host` would make the login an open redirect."""
+    if value and value.startswith("/") and not value.startswith(("//", "/\\")) and value.isprintable():
+        return value
+    return fallback
+
+
+def _pdf_filename(song, kind: str) -> str:
+    suffix = "" if kind == "sheet" else " - Tablature"
+    return f"{song.en_name} - {song.artist.en_name}{suffix}.pdf"
+
+
+def create_app(db_file: str | Path | None = None, secret_key: str | None = None, admin_password: str | None = None) -> Flask:
     app = Flask(__name__)
 
     secret_key = secret_key or os.getenv("FLASK_SECRET_KEY")
@@ -43,9 +59,19 @@ def create_app(db_file: str | Path | None = None, secret_key: str | None = None)
         raise RuntimeError("FLASK_SECRET_KEY environment variable is required")
     app.config["SECRET_KEY"] = secret_key
     app.config["BOOTSTRAP_SERVE_LOCAL"] = True  # no CDN: faster, and the CSP stays strict
+    # No ADMIN_PASSWORD = no admin: /admin is a 404 and the PDF buttons are not rendered.
+    admin_password = admin_password or os.getenv("ADMIN_PASSWORD") or ""
 
     # Behind Railway's proxy the client IP and scheme arrive in X-Forwarded-* headers.
     proxy_hops = int(os.getenv("TRUST_PROXY_HOPS", "0"))
+    # Signed-in admin: a week since the last visit. The cookie is NOT renewed on every response (that would
+    # put Set-Cookie on public pages and static files, which a shared cache may store); only the no-store
+    # /admin and /pdf responses renew it (`session.modified`, see `touch`).
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
+    app.config["SESSION_REFRESH_EACH_REQUEST"] = False
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["SESSION_COOKIE_SECURE"] = not os.getenv("DEV_SERVER")  # Secure everywhere except `main.py` on plain-http localhost
+    app.config["MAX_CONTENT_LENGTH"] = 16 * 1024  # forms here are tiny
     if proxy_hops:
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=proxy_hops, x_proto=proxy_hops, x_host=proxy_hops)
 
@@ -159,6 +185,87 @@ def create_app(db_file: str | Path | None = None, secret_key: str | None = None)
             "X-Content-Type-Options": "nosniff",
         })
 
+    # ---------------------------------------------------------------- admin
+    # Public pages never touch the session, so they stay identical for everyone and the edge
+    # cache can keep them; only /admin* and /pdf* depend on who is signed in.
+    # The session proves "knows the password that is current now": rotating ADMIN_PASSWORD (or the secret
+    # key) signs every browser out, which a plain `admin: True` flag could not do.
+    admin_proof = hmac.new(secret_key.encode(), b"admin:" + admin_password.encode(), "sha256").hexdigest()
+
+    def is_admin() -> bool:
+        return bool(admin_password) and hmac.compare_digest(str(session.get("admin", "")), admin_proof)
+
+    def touch() -> None:
+        """Renew the one-week window. Only call from responses that are `no-store`."""
+        if is_admin():
+            session.modified = True
+
+    def csrf_token() -> str:
+        if "csrf" not in session:
+            session["csrf"] = secrets.token_urlsafe(32)
+        return session["csrf"]
+
+    def csrf_ok() -> bool:
+        expected = session.get("csrf", "")
+        return bool(expected) and hmac.compare_digest(request.form.get("csrf", ""), expected)
+
+    @app.context_processor
+    def _admin_context():
+        return {"csrf_token": csrf_token, "admin_enabled": bool(admin_password)}
+
+    @app.route("/admin", methods=["GET", "POST"])
+    @limiter.limit("5 per minute;30 per hour", methods=["POST"])
+    def admin():
+        if not admin_password:
+            abort(404)
+        target = _safe_next(request.values.get("next"), url_for("home"))
+        if request.method == "POST":
+            if not csrf_ok():
+                abort(400)
+            sent = request.form.get("password", "")
+            if hmac.compare_digest(sent.encode(), admin_password.encode()):
+                session.clear()  # fresh session: a pre-login cookie must not become the admin's
+                session["admin"] = admin_proof
+                session.permanent = True
+                logger.info(f"admin signed in from {get_remote_address()}")
+                return redirect(target)
+            logger.warning(f"failed admin login from {get_remote_address()}")
+            return render_template("admin.html", failed=True, signed_in=is_admin(), next=request.form.get("next", "")), 401
+        if is_admin() and request.args.get("next"):
+            return redirect(target)
+        return render_template("admin.html", failed=False, signed_in=is_admin(), next=request.args.get("next", ""))
+
+    @app.route("/admin/logout", methods=["POST"])
+    def admin_logout():
+        if not csrf_ok():
+            abort(400)
+        session.clear()
+        return redirect(url_for("home"))
+
+    @app.route("/admin/session")
+    def admin_session():
+        touch()  # artist pages call this, so browsing the site keeps the admin signed in
+        return jsonify(admin=is_admin())
+
+    @app.route("/pdf/<int:song_id>/<kind>")
+    @limiter.limit("60 per minute")
+    def pdf(song_id, kind):
+        if kind not in ("sheet", "tab") or not admin_password:
+            abort(404)
+        if not is_admin():  # checked before the lookup, so nobody can probe which songs have a PDF
+            return redirect(url_for("admin", next=request.path))
+        touch()
+        song = catalog.song_by_id.get(song_id)
+        key = song and (song.score_key if kind == "sheet" else song.tab_key)
+        if not key:
+            abort(404)
+        try:
+            url = storage.presigned_url(key, _pdf_filename(song, kind))
+        except storage.StorageError as error:
+            logger.error(f"R2 not usable: {error}")
+            return _error(503, "Sheet music is unavailable right now")
+        return redirect(url)
+
     # ----------------------------------------------------------------- misc
     @app.route("/healthz")
     def healthz():
@@ -190,6 +297,8 @@ def create_app(db_file: str | Path | None = None, secret_key: str | None = None)
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         if request.is_secure:
             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+        if request.path.startswith(("/admin", "/pdf")):  # per-user: never keep in a shared cache
+            response.headers["Cache-Control"] = "private, no-store"
         return response
 
     # --------------------------------------------------------------- errors

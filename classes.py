@@ -6,7 +6,7 @@ from pathlib import Path
 from logger import logger
 
 DEFAULT_DB = Path(__file__).parent / "instance" / "music.db"
-REQUIRED_VERSION = 3  # see migrations/; run `uv run python db_migrate.py up`
+REQUIRED_VERSION = 4  # see migrations/; run `uv run python db_migrate.py up`
 
 
 def db_path() -> Path:
@@ -36,6 +36,8 @@ class Song:
     video_id: str  # original recording on YouTube
     demo_id: str  # sheet-music / bouzouki demo on YouTube
     artist: Artist
+    score_key: str | None = None  # R2 object key of the sheet-music PDF; None = no PDF
+    tab_key: str | None = None  # same, tablature
 
 
 class Catalog:
@@ -46,6 +48,7 @@ class Catalog:
         self.songs = [s for a in artists for s in a.songs]
         self.artist_by_slug = {a.slug: a for a in artists}
         self.song_by_slug = {s.slug: s for s in self.songs}
+        self.song_by_id = {s.song_id: s for s in self.songs}
         # Old URLs used the English name; first match wins for the few duplicate titles.
         self.artist_by_name = {a.en_name: a for a in artists}
         self.song_by_name: dict[str, Song] = {}
@@ -71,10 +74,11 @@ def load_catalog(path: Path | None = None) -> Catalog:
             )
         }
         for row in conn.execute(
-            "SELECT song_id, artist_id, slug, en_name, gr_name, video_id, demo_id FROM songs ORDER BY song_id"
+            "SELECT song_id, artist_id, slug, en_name, gr_name, video_id, demo_id, score_key, tab_key "
+            "FROM songs ORDER BY song_id"
         ):
             artist = artists[row[1]]
-            artist.songs.append(Song(row[0], row[2], row[3], row[4], row[5], row[6], artist))
+            artist.songs.append(Song(row[0], row[2], row[3], row[4], row[5], row[6], artist, row[7], row[8]))
     finally:
         conn.close()
     catalog = Catalog(list(artists.values()))
