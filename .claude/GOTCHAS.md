@@ -16,6 +16,7 @@ being true.
 | Some videos can't be embedded for the viewer | Two causes seen: (1) a few play on an https origin but not on `http://localhost`; (2) region block / embedding disabled → player error 150 even on https (oEmbed still says 200) | (2) is YouTube-side and stays after deploy. `artist.js` detects the error via the iframe API and shows a card with "Watch on YouTube" / "Find another recording". `main.py --https` was tried and removed: slow (a TLS handshake per request) |
 | `app.py` / gunicorn don't reload; templates are cached | Edited templates don't show, or a half-updated server returns 500 | Develop with `uv run python main.py` (debug + reloader); `main.py` is never for production |
 | `artist_thumb` (WebP) is made by migration 0003 with Pillow (dev dependency) | A new artist image added later has no thumbnail | App falls back to `artist_img`; re-run a thumbnail step for new images |
+| The sticky video panel needs its column (`#player-home`) to be as tall as the song list | With `align-items: start` on `.artist-layout` the column shrank to the panel's height and the video scrolled away on long artists | Keep grid items stretched; no `overflow` on ancestors of the panel |
 | Migrations rebuild tables | DB file doubles in size | `db_migrate.py` runs `VACUUM` afterwards |
 
 ## Known gaps
