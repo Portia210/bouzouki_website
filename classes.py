@@ -6,7 +6,7 @@ from pathlib import Path
 from logger import logger
 
 DEFAULT_DB = Path(__file__).parent / "instance" / "music.db"
-REQUIRED_VERSION = 2  # see migrations/; run `uv run python db_migrate.py up`
+REQUIRED_VERSION = 3  # see migrations/; run `uv run python db_migrate.py up`
 
 
 def db_path() -> Path:
@@ -67,7 +67,7 @@ def load_catalog(path: Path | None = None) -> Catalog:
         artists = {
             row[0]: Artist(row[0], row[1], row[2], row[3], bool(row[4]))
             for row in conn.execute(
-                "SELECT artist_id, slug, en_name, gr_name, artist_img IS NOT NULL FROM artists ORDER BY artist_id"
+                "SELECT artist_id, slug, en_name, gr_name, artist_img IS NOT NULL OR artist_thumb IS NOT NULL FROM artists ORDER BY artist_id"
             )
         }
         for row in conn.execute(
@@ -85,7 +85,7 @@ def load_catalog(path: Path | None = None) -> Catalog:
 def load_artist_image(artist_id: int, path: Path | None = None) -> bytes | None:
     conn = sqlite3.connect(f"file:{Path(path or db_path())}?mode=ro", uri=True, timeout=10.0)
     try:
-        row = conn.execute("SELECT artist_img FROM artists WHERE artist_id = ?", (artist_id,)).fetchone()
+        row = conn.execute("SELECT COALESCE(artist_thumb, artist_img) FROM artists WHERE artist_id = ?", (artist_id,)).fetchone()
     finally:
         conn.close()
     return row[0] if row else None

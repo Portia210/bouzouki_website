@@ -9,17 +9,14 @@
 </span>
 {% endmacro %}
 
-{# One labelled YouTube embed plus a plain link, for videos the owner won't let YouTube embed. #}
-{% macro player(label, video_id, title, element_id='', link_id='') %}
+{# One labelled video slot. artist.js mounts the YouTube player into it (or a fallback card when
+   YouTube refuses to play the video in the viewer's region), plus a plain link as a second way out. #}
+{% macro player(label, video_id, element_id, link_id) %}
 <div class="player-head">
     <h3 class="player-label">{{ label }}</h3>
-    <a class="player-yt" {% if link_id %}id="{{ link_id }}" {% endif %}href="https://www.youtube.com/watch?v={{ video_id }}" target="_blank" rel="noopener">Open on YouTube ↗</a>
+    <a class="player-yt" id="{{ link_id }}" href="https://www.youtube.com/watch?v={{ video_id }}" target="_blank" rel="noopener">Open on YouTube ↗</a>
 </div>
-<div class="ratio ratio-16x9 player-frame">
-    <iframe {% if element_id %}id="{{ element_id }}" {% endif %}src="https://www.youtube-nocookie.com/embed/{{ video_id }}"
-        title="{{ title }}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"
-        allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</div>
+<div class="ratio ratio-16x9 player-frame" id="{{ element_id }}"></div>
 {% endmacro %}
 
 {% macro search_form(big=False, placeholder='Search songs or artists…') %}

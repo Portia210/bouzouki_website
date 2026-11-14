@@ -18,7 +18,8 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
 - Verified: pytest (39); screenshots desktop/mobile; dev log content; embeds that say "unavailable" on http://localhost DO play from an https origin.
 - NOT verified: videos on the real Railway https domain; browser tabs showing the new favicon (cache).
 - Also: `cryptography` (dev dep) + `main.py --https`; verified the previously "unavailable" original plays on https://localhost. Phone artist page: list first, player opens under the tapped song (tap again/Close folds it, stops playback); desktop unchanged.
-- Next: after the Railway deploy, confirm the embeds play there.
+- Also: local https removed (slow); WebP thumbnails (home 9.9 MB → 1.6 MB); 5 artist cards per row; static URLs versioned + 1-year cache in prod; players use the YouTube iframe API (CSP allows https://www.youtube.com scripts) and show a fallback card on error 150.
+- Next: after the Railway deploy, check which videos still show the fallback card (those are region/owner blocks).
 
 ## 2026-11-14 — Icon, artist-page layout, songs open in the artist page
 - Changed: Greek-bouzouki logo/favicon set (SVG source `static/img/logo.svg`; ICO/PNGs rendered from it with headless Chrome); no song pages any more — `/song/<slug>` and search results go to `/artist/<slug>#<song>`, Enter opens the best match; artist page list scrolls with the page, player panel sticky (phone: player above the list); "Open on YouTube" link per player.

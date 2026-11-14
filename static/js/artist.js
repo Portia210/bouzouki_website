@@ -5,22 +5,105 @@
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     var list = document.getElementById("song-list");
     var panel = document.getElementById("player-panel");
+    var home = document.getElementById("player-home");
     var rows = Array.prototype.slice.call(list.querySelectorAll(".song-row"));
-    var embed = "https://www.youtube-nocookie.com/embed/";
     var watch = "https://www.youtube.com/watch?v=";
+    var search = "https://www.youtube.com/results?search_query=";
     var baseTitle = document.title;
-    function byId(id) { return document.getElementById(id); }
-    var home = byId("player-home");
 
+    function byId(id) { return document.getElementById(id); }
+    function current() { return list.querySelector('.song-row[aria-current="true"]'); }
+
+    // ---- YouTube players ------------------------------------------------------------
+    // The iframe API tells us when a video can't be played for this viewer (region block,
+    // embedding disabled, removed); then a card with other ways to watch replaces the grey error.
+    var apiPromise = null;
+    function loadApi() {
+        if (apiPromise) return apiPromise;
+        apiPromise = new Promise(function (resolve, reject) {
+            if (window.YT && window.YT.Player) { resolve(window.YT); return; }
+            window.onYouTubeIframeAPIReady = function () { resolve(window.YT); };
+            var script = document.createElement("script");
+            script.src = "https://www.youtube.com/iframe_api";
+            script.onerror = reject;
+            document.head.appendChild(script);
+            setTimeout(reject, 8000);
+        });
+        return apiPromise;
+    }
+
+    function el(tag, className, text) {
+        var node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+    }
+
+    function link(text, href, className) {
+        var a = el("a", className, text);
+        a.href = href; a.target = "_blank"; a.rel = "noopener";
+        return a;
+    }
+
+    function showFallback(frame, videoId, query, original) {
+        frame.textContent = "";
+        var card = el("div", "player-fallback");
+        card.appendChild(el("strong", "", "This video can't be played here"));
+        card.appendChild(el("p", "", "YouTube blocks it in your region, or its owner turned embedding off."));
+        var actions = el("div", "actions");
+        actions.appendChild(link("Watch on YouTube ↗", watch + videoId));
+        if (original) actions.appendChild(link("Find another recording ↗", search + encodeURIComponent(query), "secondary"));
+        card.appendChild(actions);
+        frame.appendChild(card);
+    }
+
+    function mount(frame, videoId, query, original) {
+        var token = String(Number(frame.dataset.token || 0) + 1);
+        frame.dataset.token = token;
+        frame.textContent = "";
+        loadApi().then(function (YT) {
+            if (frame.dataset.token !== token) return;  // a newer song replaced this one
+            var holder = el("div");
+            frame.appendChild(holder);
+            new YT.Player(holder, {
+                host: "https://www.youtube-nocookie.com",
+                videoId: videoId,
+                playerVars: { rel: 0, playsinline: 1 },
+                events: {
+                    onError: function () {
+                        if (frame.dataset.token === token) showFallback(frame, videoId, query, original);
+                    }
+                }
+            });
+        }, function () {  // API blocked or offline: plain iframe, no error detection
+            if (frame.dataset.token !== token) return;
+            var iframe = el("iframe");
+            iframe.src = "https://www.youtube-nocookie.com/embed/" + videoId;
+            iframe.title = original ? "Original recording" : "Sheet-music lesson";
+            iframe.allow = "encrypted-media; picture-in-picture";
+            iframe.allowFullscreen = true;
+            frame.appendChild(iframe);
+        });
+    }
+
+    function stopVideos() {  // removing the iframes is the only way to stop a hidden player
+        ["player-original", "player-lesson"].forEach(function (id) {
+            var frame = byId(id);
+            frame.dataset.token = String(Number(frame.dataset.token || 0) + 1);
+            frame.textContent = "";
+        });
+    }
+
+    // ---- placement ------------------------------------------------------------------
     // Phones: the player opens inside the list, right under the tapped song, so the list
     // never gets pushed down. Wide screens: it lives in the side column.
     function place() {
-        var current = list.querySelector('.song-row[aria-current="true"]');
+        var row = current();
         if (wide.matches) {
             home.appendChild(panel);
             panel.hidden = false;
-        } else if (current) {
-            current.parentElement.appendChild(panel);
+        } else if (row) {
+            row.parentElement.appendChild(panel);
             panel.hidden = false;
         } else {
             home.appendChild(panel);
@@ -28,27 +111,18 @@
         }
     }
 
-    function stopVideos() {
-        // Replacing the iframes (without src) is the only way to stop playback of a hidden player.
-        ["player-original", "player-lesson"].forEach(function (id) {
-            var frame = byId(id), blank = frame.cloneNode(false);
-            blank.removeAttribute("src");
-            frame.replaceWith(blank);
-        });
-    }
-
-    function select(row) {
+    function select(row, keepTitle) {
         rows.forEach(function (r) { r.removeAttribute("aria-current"); });
         row.setAttribute("aria-current", "true");
         byId("player-title").textContent = row.dataset.title;
         byId("player-title-gr").textContent = row.dataset.titleGr;
-        byId("player-original").src = embed + row.dataset.original;
-        byId("player-lesson").src = embed + row.dataset.lesson;
         byId("player-original-link").href = watch + row.dataset.original;
         byId("player-lesson-link").href = watch + row.dataset.lesson;
-        byId("player-more").href = "https://www.youtube.com/results?search_query=" + encodeURIComponent(row.dataset.query);
-        document.title = row.dataset.title + " — " + list.dataset.artistName + " — Bouzouki Rebetico";
-        place();
+        byId("player-more").href = search + encodeURIComponent(row.dataset.query);
+        if (!keepTitle) document.title = row.dataset.title + " — " + list.dataset.artistName + " — Bouzouki Rebetico";
+        place();  // move first: moving an iframe reloads it
+        mount(byId("player-original"), row.dataset.original, row.dataset.query, true);
+        mount(byId("player-lesson"), row.dataset.lesson, row.dataset.query, false);
     }
 
     function close() {
@@ -86,21 +160,22 @@
     });
 
     byId("player-close").addEventListener("click", function () {
-        var row = list.querySelector('.song-row[aria-current="true"]');
+        var row = current();
         close();
         if (row) bringIntoView(row, true);
     });
 
-    wide.addEventListener("change", place);
+    wide.addEventListener("change", function () {
+        var row = current() || (wide.matches ? rows[0] : null);
+        if (row) select(row, true); else place();
+    });
     window.addEventListener("hashchange", applyHash);
 
     if (fromHash()) applyHash();
-    else {
-        if (wide.matches && rows.length) rows[0].setAttribute("aria-current", "true");  // side player already shows song 1
-        document.title = baseTitle;
-        place();
-    }
+    else if (wide.matches && rows.length) select(rows[0], true);  // side player starts on the first song
+    else place();
 
+    // ---- filter ---------------------------------------------------------------------
     var filter = byId("song-filter");
     if (!filter) return;
     var empty = byId("filter-empty");

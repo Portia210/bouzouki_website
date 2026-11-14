@@ -1,3 +1,4 @@
+import io
 import sqlite3
 
 import pytest
@@ -34,22 +35,22 @@ def legacy_db(tmp_path):
 
 
 def test_up_adds_slugs_fk_and_fixes_names(legacy_db):
-    assert db_migrate.migrate(legacy_db, "up") == 2
+    assert db_migrate.migrate(legacy_db, "up") == 3
     songs = rows(legacy_db, "songs", "song_id")
     assert [s[2] for s in songs] == ["pyretos", "pyretos-2", "adika-katakrinoyn"]
     assert songs[0][1] == 1 and songs[1][1] == 2  # artist_id
     assert songs[2][4] == "αδικα με κατακρινουν"  # Latin 'i' replaced
     conn = sqlite3.connect(legacy_db)
     assert conn.execute("PRAGMA foreign_key_check").fetchall() == []
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
 
 
 def test_round_trip_restores_original_data(legacy_db):
     before = (rows(legacy_db, "artists", "artist_id"), rows(legacy_db, "songs", "song_id"))
     db_migrate.migrate(legacy_db, "up")
-    assert db_migrate.migrate(legacy_db, "down", 2) == 0
+    assert db_migrate.migrate(legacy_db, "down", 3) == 0
     assert (rows(legacy_db, "artists", "artist_id"), rows(legacy_db, "songs", "song_id")) == before
-    assert db_migrate.migrate(legacy_db, "up") == 2
+    assert db_migrate.migrate(legacy_db, "up") == 3
 
 
 def test_orphan_song_aborts_and_leaves_db_untouched(legacy_db):
@@ -61,3 +62,18 @@ def test_orphan_song_aborts_and_leaves_db_untouched(legacy_db):
         db_migrate.migrate(legacy_db, "up")
     assert sqlite3.connect(legacy_db).execute("PRAGMA user_version").fetchone()[0] == 0
     assert len(rows(legacy_db, "songs", "song_id")) == 4
+
+
+def test_thumbnail_is_created_for_valid_images_and_skipped_for_broken_ones(legacy_db):
+    from PIL import Image
+
+    png = io.BytesIO()
+    Image.new("RGB", (40, 30), "orange").save(png, "PNG")
+    conn = sqlite3.connect(legacy_db)
+    conn.execute("UPDATE artists SET artist_img = ? WHERE artist_id = 2", (png.getvalue(),))  # 1 keeps its invalid bytes
+    conn.commit()
+    conn.close()
+    db_migrate.migrate(legacy_db, "up")
+    conn = sqlite3.connect(legacy_db)
+    thumbs = dict(conn.execute("SELECT artist_id, artist_thumb FROM artists").fetchall())
+    assert thumbs[2][:4] == b"RIFF" and thumbs[1] is None

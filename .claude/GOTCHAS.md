@@ -13,8 +13,9 @@ being true.
 | CSP forbids inline `<script>` and `style=` | New inline code silently does nothing | Put JS in `static/js/`, styling in `styles.css` (`test_no_inline_script_or_style_in_pages`) |
 | `.gitignore` contains `*.db` | A new `.db` file is ignored | `!instance/music.db` keeps the main DB tracked; use `git add -f` for others |
 | `pkill -f <text>` in a Bash tool call matches the call itself | Shell exits 144 | Kill by port: `fuser -k 5055/tcp` |
-| Some YouTube embeds say "This video is unavailable" on `http://localhost` / `127.0.0.1` | Same videos play from an https origin (verified with a self-signed https test page, nocookie and youtube.com hosts alike); oEmbed/watch metadata say they are fine | Not a code bug — expected to work on Railway (https). Locally run `uv run python main.py --https` (accept the self-signed warning) or use "Open on YouTube ↗" |
+| Some videos can't be embedded for the viewer | Two causes seen: (1) a few play on an https origin but not on `http://localhost`; (2) region block / embedding disabled → player error 150 even on https (oEmbed still says 200) | (2) is YouTube-side and stays after deploy. `artist.js` detects the error via the iframe API and shows a card with "Watch on YouTube" / "Find another recording". `main.py --https` was tried and removed: slow (a TLS handshake per request) |
 | `app.py` / gunicorn don't reload; templates are cached | Edited templates don't show, or a half-updated server returns 500 | Develop with `uv run python main.py` (debug + reloader); `main.py` is never for production |
+| `artist_thumb` (WebP) is made by migration 0003 with Pillow (dev dependency) | A new artist image added later has no thumbnail | App falls back to `artist_img`; re-run a thumbnail step for new images |
 | Migrations rebuild tables | DB file doubles in size | `db_migrate.py` runs `VACUUM` afterwards |
 
 ## Known gaps

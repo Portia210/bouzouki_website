@@ -51,8 +51,8 @@
                     </div>
                     <button type="button" class="btn btn-sm player-close d-md-none" id="player-close" aria-label="Close the videos">Close ✕</button>
                 </div>
-                {{ player('Original recording', first.video_id, 'Original recording', 'player-original', 'player-original-link') }}
-                {{ player('Sheet-music lesson', first.demo_id, 'Bouzouki sheet-music lesson', 'player-lesson', 'player-lesson-link') }}
+                {{ player('Original recording', first.video_id, 'player-original', 'player-original-link') }}
+                {{ player('Sheet-music lesson', first.demo_id, 'player-lesson', 'player-lesson-link') }}
                 <p class="player-more"><a id="player-more" target="_blank" rel="noopener"
                     href="https://www.youtube.com/results?search_query={{ (first.gr_name ~ ' ' ~ artist.gr_name)|urlencode }}">More videos of this song on YouTube ↗</a></p>
             </div>

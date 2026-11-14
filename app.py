@@ -18,6 +18,7 @@ load_dotenv()
 
 CSP = (
     "default-src 'self'; img-src 'self' data:; "
+    "script-src 'self' https://www.youtube.com; "  # YouTube's iframe API reports videos that can't be played
     "frame-src https://www.youtube-nocookie.com; "
     "base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
 )
@@ -49,6 +50,17 @@ def create_app(db_file: str | Path | None = None, secret_key: str | None = None)
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=proxy_hops, x_proto=proxy_hops, x_host=proxy_hops)
 
     Bootstrap5(app)
+
+    # Static files carry their mtime in the URL, so they can be cached for a year without going stale.
+    app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0 if os.getenv("DEV_SERVER") else 31536000
+
+    @app.url_defaults
+    def _version_static_urls(endpoint, values):
+        if endpoint == "static" and "filename" in values:
+            try:
+                values["v"] = int((Path(app.static_folder) / values["filename"]).stat().st_mtime)
+            except OSError:
+                pass
 
     limiter = Limiter(
         key_func=get_remote_address,

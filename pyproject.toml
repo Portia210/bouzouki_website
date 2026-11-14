@@ -15,7 +15,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "cryptography>=50.0.2",
+    "pillow>=13.0.0",
     "pytest>=9.2.0",
 ]
 

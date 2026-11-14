@@ -10,8 +10,7 @@ def test_pages_render(client, catalog):
     # the player starts on the first song; original recording = video_id, lesson = demo_id
     html = page.get_data(as_text=True)
     assert html.index("player-original") < html.index("player-lesson")
-    assert f"embed/{song.video_id}" in html and f"embed/{song.demo_id}" in html
-    assert f"watch?v={song.video_id}" in html  # plain YouTube link for videos that refuse embedding
+    assert f"watch?v={song.video_id}" in html and f"watch?v={song.demo_id}" in html  # plain links, for videos that can't be embedded
     assert f'data-slug="{song.slug}"' in html
     # phone UX hooks used by artist.js: list first, player re-homed under the tapped song
     assert 'id="player-home"' in html and 'id="player-close"' in html
@@ -68,17 +67,19 @@ def test_search_results_page_escapes_input(client):
     assert "<script>alert(1)</script>" not in html
 
 
-def test_image_is_served_with_etag(client):
+def test_image_is_a_small_webp_thumbnail(client):
     r = client.get("/images/vamvakaris-markos")
-    assert r.status_code == 200 and r.mimetype == "image/png"
+    assert r.status_code == 200 and r.mimetype == "image/webp"
+    assert len(r.data) < 60_000  # the original PNG is ~230 KB
     again = client.get("/images/vamvakaris-markos", headers={"If-None-Match": r.headers["ETag"]})
     assert again.status_code == 304
 
 
 def test_security_headers(client):
     h = client.get("/").headers
-    assert "frame-src https://www.youtube-nocookie.com" in h["Content-Security-Policy"]
-    assert "script-src" not in h["Content-Security-Policy"].replace("default-src", "")  # inline scripts stay blocked
+    csp = h["Content-Security-Policy"]
+    assert "frame-src https://www.youtube-nocookie.com" in csp
+    assert "script-src 'self' https://www.youtube.com;" in csp and "unsafe-inline" not in csp
     assert h["X-Content-Type-Options"] == "nosniff"
 
 
@@ -108,3 +109,8 @@ def test_favicon_and_manifest(client):
     html = client.get("/").get_data(as_text=True)
     for needle in ("favicon.svg", "/favicon.ico", "apple-touch-icon.png", "site.webmanifest"):
         assert needle in html
+
+
+def test_static_urls_are_versioned_and_cacheable(client):
+    html = client.get("/").get_data(as_text=True)
+    assert "styles.css?v=" in html
