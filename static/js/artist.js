@@ -39,20 +39,29 @@
         return node;
     }
 
-    function link(text, href, className) {
-        var a = el("a", className, text);
+    // Fixed markup, no user data: safe to set as HTML.
+    var ICON_PLAY = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>';
+    var ICON_SEARCH = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    var ICON_OFF = '<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><rect x="3" y="5.5" width="18" height="13" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9.5v5l4.2-2.5z" fill="currentColor"/><path d="M4 4l16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+    function button(icon, text, href, className) {
+        var a = el("a", "fb-btn " + className);
         a.href = href; a.target = "_blank"; a.rel = "noopener";
+        a.insertAdjacentHTML("afterbegin", icon);
+        a.appendChild(el("span", "", text));
         return a;
     }
 
     function showFallback(frame, videoId, query, original) {
         frame.textContent = "";
         var card = el("div", "player-fallback");
-        card.appendChild(el("strong", "", "This video can't be played here"));
-        card.appendChild(el("p", "", "YouTube blocks it in your region, or its owner turned embedding off."));
-        var actions = el("div", "actions");
-        actions.appendChild(link("Watch on YouTube ↗", watch + videoId));
-        if (original) actions.appendChild(link("Find another recording ↗", search + encodeURIComponent(query), "secondary"));
+        var badge = el("div", "fb-badge");
+        badge.insertAdjacentHTML("afterbegin", ICON_OFF);
+        badge.appendChild(el("span", "", "Can't play here"));
+        var actions = el("div", "fb-actions");
+        actions.appendChild(button(ICON_PLAY, "Watch on YouTube", watch + videoId, "fb-primary"));
+        if (original) actions.appendChild(button(ICON_SEARCH, "Find other recordings", search + encodeURIComponent(query), "fb-ghost"));
+        card.appendChild(badge);
         card.appendChild(actions);
         frame.appendChild(card);
     }
