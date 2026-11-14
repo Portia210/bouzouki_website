@@ -115,3 +115,12 @@ def test_favicon_and_manifest(client):
 def test_static_urls_are_versioned_and_cacheable(client):
     html = client.get("/").get_data(as_text=True)
     assert "styles.css?v=" in html
+
+
+def test_artist_song_search_looks_and_behaves_like_a_search_box(client, catalog):
+    big = max(catalog.artists, key=lambda a: a.number_of_songs)
+    html = client.get(f"/artist/{big.slug}").get_data(as_text=True)
+    assert 'class="song-search"' in html and 'id="song-filter"' in html and 'id="filter-count"' in html
+    assert f'placeholder="Search {big.number_of_songs} songs"' in html
+    small = min(catalog.artists, key=lambda a: a.number_of_songs)
+    assert 'id="song-filter"' not in client.get(f"/artist/{small.slug}").get_data(as_text=True)

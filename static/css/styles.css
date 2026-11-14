@@ -217,7 +217,15 @@ a { text-underline-offset: 3px; }
 .empty-note { color: var(--muted); }
 .list-hint { color: var(--muted); font-size: .9rem; margin: 0 0 .6rem; }
 .song-row { scroll-margin-top: 8.5rem; }
-#song-filter { border-radius: 999px; padding: .65rem 1.1rem; }
+.song-search { position: relative; margin-bottom: .75rem; }
+.song-search .search-icon { left: 1.05rem; }
+#song-filter {
+    padding: .8rem 1.1rem .8rem 2.9rem; border-radius: 999px; border: 2px solid var(--accent);
+    background: var(--surface); color: var(--ink); box-shadow: var(--shadow); font-weight: 500;
+}
+#song-filter::placeholder { color: var(--muted); font-weight: 400; opacity: 1; }
+#song-filter:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); background: var(--surface); color: var(--ink); }
+.filter-count { margin: 0 0 .6rem; padding-inline: 1rem; font-size: .88rem; color: var(--muted); }
 
 /* ---- artist layout + player ------------------------------------------------ */
 .container-xxl.container-wide { max-width: 1680px; }  /* artist page: let the video use big screens */

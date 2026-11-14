@@ -22,8 +22,13 @@
     <div class="artist-layout">
         <div class="artist-songs">
             {% if artist.number_of_songs > 8 %}
-            <input type="search" id="song-filter" class="form-control mb-3" placeholder="Filter {{ artist.number_of_songs }} songs…"
-                aria-label="Filter songs by {{ artist.en_name }}" data-artist="{{ artist.slug }}" maxlength="100">
+            <div class="song-search">
+                <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.500-3.500" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <input type="search" id="song-filter" class="form-control" autocomplete="off"
+                    placeholder="Search {{ artist.number_of_songs }} songs"
+                    aria-label="Search songs by {{ artist.en_name }}" data-artist="{{ artist.slug }}" maxlength="100">
+            </div>
+            <p class="filter-count" id="filter-count" hidden aria-live="polite"></p>
             {% endif %}
             <p class="list-hint d-md-none">Tap a song to open its videos right below it.</p>
             <ul class="song-list" id="song-list" data-artist-name="{{ artist.en_name }}">

@@ -203,6 +203,7 @@
     var filter = byId("song-filter");
     if (!filter) return;
     var empty = byId("filter-empty");
+    var count = byId("filter-count");
     var timer = null, controller = null;
 
     function show(slugs) {
@@ -213,7 +214,16 @@
             if (ok) visible++;
         });
         empty.hidden = visible > 0;
+        count.hidden = slugs === null;
+        count.textContent = visible + " of " + rows.length + " songs match";
     }
+
+    filter.addEventListener("keydown", function (e) {  // Enter opens the first match, like a search box should
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        var first = rows.filter(function (r) { return !r.parentElement.hidden; })[0];
+        if (first) { first.click(); filter.blur(); }
+    });
 
     filter.addEventListener("input", function () {
         clearTimeout(timer);
