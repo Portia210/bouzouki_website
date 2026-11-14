@@ -137,6 +137,7 @@
 
     function showTab(row) {
         tabs.forEach(function (t) { t.setAttribute("aria-selected", String(t.dataset.tab === tab)); });
+        byId("player-more").parentElement.hidden = tab !== "original";  // other recordings only make sense for the song, not for the sheet-music lesson
         if (!row) return;
         var id = tab === "original" ? row.dataset.original : row.dataset.lesson;
         byId("player-yt").href = watch + id;
