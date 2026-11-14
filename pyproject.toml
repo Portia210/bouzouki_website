@@ -6,9 +6,17 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "bootstrap-flask>=2.5.0",
-    "dotenv>=0.9.9",
     "flask>=3.1.2",
-    "flask-caching>=2.3.1",
     "flask-limiter>=4.0.0",
+    "gunicorn>=27.0.1",
+    "python-dotenv>=1.1.1",
     "pytz>=2025.2",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

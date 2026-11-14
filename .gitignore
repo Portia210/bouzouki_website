@@ -1,20 +1,117 @@
-# Python cache files
+# =====================================================================
+# .gitignore — generic base template. Delete sections you don't use,
+# add project-specific paths at the bottom.
+# DO commit: lockfiles (pnpm-lock.yaml, package-lock.json, uv.lock,
+# poetry.lock, Cargo.lock...), CLAUDE.md, .claude/ (except local files),
+# .env.example
+# =====================================================================
+
+# ---- Secrets & credentials (never commit) ---------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+*.gpg
+secrets/
+credentials*.json
+service-account*.json
+*.tfstate
+*.tfstate.*
+.terraform/
+.npmrc
+.pypirc
+.netrc
+
+# ---- Claude Code (personal, not shared) -----------------------------
+.claude/settings.local.json
+CLAUDE.local.md
+
+# ---- OS ---------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+*:Zone.Identifier
+
+# ---- Editors / IDEs ---------------------------------------------------
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- Logs & temp ------------------------------------------------------
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.bak
+
+# ---- Node / JS / TS ---------------------------------------------------
+node_modules/
+.pnpm-store/
+dist/
+build/
+out/
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+.vite/
+.cache/
+.parcel-cache/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- Python -----------------------------------------------------------
 __pycache__/
 *.py[cod]
-
-# config
-*.ini
-
-# Virtual environment
-env/
-venv/
 .venv/
-*.env
+venv/
+env/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.ipynb_checkpoints/
 
-# PyCharm project files
+# ---- Test & coverage --------------------------------------------------
+coverage/
+.coverage
+.coverage.*
+htmlcov/
+.nyc_output/
+test-results/
+playwright-report/
+# browser-automation login state (cookies/tokens)
+**/.auth/
+*storage-state*.json
+
+# ---- Databases, dumps & uploads (may contain real user data) ----------
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+backups/
+uploads/
+
+# ---- Project-specific -------------------------------------------------
+
+# Project-specific (from the old .gitignore)
+*.ini
 .idea/
-
-# Logs
-*.log
-
-.env
