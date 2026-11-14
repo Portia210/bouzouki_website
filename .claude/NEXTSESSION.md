@@ -6,7 +6,15 @@ keeps them). Standing rules go in CLAUDE.md or GOTCHAS.md, not here.
 
 Entry template (copy it, keep the "NOT verified" line — write "nothing" if so):
 
-    ## 2026-11-14 — Railway: region and edge cache (speed)
+    ## 2026-11-14 — PDF sheet music: found, audited, plan written (nothing uploaded)
+- Changed: only docs + `scripts/pdf_audit/` (`manifest.ps1`, `audit.py`). Full findings and design: `.claude/plans/pdf-upload.md`; tasks P1–P3 and open decisions D1–D4 in ROADMAP.
+- Found: the Patreon PDFs are at `D:\מסמכים\python-downloads` (D: is NOT mounted in WSL; use `powershell.exe`). 79 artist folders, 1048 song folders = the 1048 DB songs, 1976 PDFs (~740 MB), 2 per song (sheet + `ΤΑΜΠΛΑΤΟΥΡΑ` tab), plus mp3/mid/sib. 1046 folders match a DB song by `demo_id` (from `video link.txt`), 1045 also by phonetic name; 3 exceptions by name; 56 songs have no PDF.
+- Verified: `uv run python scripts/pdf_audit/audit.py <manifest.json>` reproduces every number (manifest made with `manifest.ps1`, ~27 MB, not committed).
+- NOT verified: anything on R2 (the developer has a bucket; name, public/private, keys not known). No file was copied, uploaded or changed.
+- Traps / decisions: R2 credentials only as env vars on the developer's Windows machine, never in chat; the PDFs are members-only Patreon content (copyright question, D1); object keys ASCII (`pdf/<song-slug>.pdf`), Greek only in `Content-Disposition`.
+- Next: developer answers D1–D4, then P1 (upload script with `plan` dry run first).
+
+## 2026-11-14 — Railway: region and edge cache (speed)
 - Changed (in Railway, not in git): service `web` moved from us-west2 to `europe-west4-drams3a` (Amsterdam), edge CDN enabled (`htmlCaching auto`, purge all on deploy). Cause of the slowness was distance (~0.45 s per request), not image size (thumbnails ~12 KB).
 - Verified: image served with `x-cache: HIT`; 78 home-page images over one HTTP/2 connection 6.5 s → ~2 s; warm-connection TTFB 0.45 s → 0.11 s.
 - NOT verified: the region switch finishing on its own — the running deployment still listed both regions; the next deploy applies Europe only.

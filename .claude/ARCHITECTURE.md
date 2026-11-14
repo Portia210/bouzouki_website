@@ -60,3 +60,9 @@ Env: `FLASK_SECRET_KEY`, `PORT`, `LOG_LEVEL`, `TRUST_PROXY_HOPS`, `DATABASE_PATH
 ## Verification commands
 `uv run pytest -q`. UI: run the app and check pages in a browser (headless Chrome
 screenshots were used; no browser test suite).
+
+## Railway (production) — facts
+Project `bouzouki-website` id `75ef6876-6dc5-40e0-9f00-445cc86137b1`, environment `production` `0b99f4ed-88e8-4c03-8ce9-12bbd6b7a466`, service `web` `6f318ef4-dd9c-4b20-939e-41cbc31b6e74`. Builder RAILPACK, start `gunicorn app:app --bind 0.0.0.0:$PORT --workers 2`, health `/healthz`, region `europe-west4-drams3a`, edge CDN on. Variables: `FLASK_SECRET_KEY`, `TRUST_PROXY_HOPS=1`. Settings live in Railway, not in git (`railway.json`/`Procfile` mirror them). Every push to `master` redeploys; expect a short "Application not found" while it swaps.
+
+## Planned: sheet-music PDFs on Cloudflare R2
+Not built. Plan, audit numbers and decisions: `.claude/plans/pdf-upload.md`; audit tooling: `scripts/pdf_audit/`.
