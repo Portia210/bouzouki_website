@@ -9,7 +9,12 @@
 </span>
 {% endmacro %}
 
-{% macro player(video_id, title, element_id='') %}
+{# One labelled YouTube embed plus a plain link, for videos the owner won't let YouTube embed. #}
+{% macro player(label, video_id, title, element_id='', link_id='') %}
+<div class="player-head">
+    <h3 class="player-label">{{ label }}</h3>
+    <a class="player-yt" {% if link_id %}id="{{ link_id }}" {% endif %}href="https://www.youtube.com/watch?v={{ video_id }}" target="_blank" rel="noopener">Open on YouTube ↗</a>
+</div>
 <div class="ratio ratio-16x9 player-frame">
     <iframe {% if element_id %}id="{{ element_id }}" {% endif %}src="https://www.youtube-nocookie.com/embed/{{ video_id }}"
         title="{{ title }}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"

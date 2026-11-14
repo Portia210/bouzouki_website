@@ -5,12 +5,21 @@ def test_pages_render(client, catalog):
     artist = catalog.artists[0]
     song = artist.songs[0]
     assert client.get("/").status_code == 200
-    assert client.get(f"/artist/{artist.slug}").status_code == 200
-    page = client.get(f"/song/{song.slug}")
+    page = client.get(f"/artist/{artist.slug}")
     assert page.status_code == 200
-    # original recording = video_id, lesson = demo_id (the old template had them swapped)
+    # the player starts on the first song; original recording = video_id, lesson = demo_id
     html = page.get_data(as_text=True)
-    assert html.index(song.video_id) < html.index(song.demo_id)
+    assert html.index("player-original") < html.index("player-lesson")
+    assert f"embed/{song.video_id}" in html and f"embed/{song.demo_id}" in html
+    assert f"watch?v={song.video_id}" in html  # plain YouTube link for videos that refuse embedding
+    assert f'data-slug="{song.slug}"' in html
+
+
+def test_song_url_redirects_to_artist_page_opened_on_that_song(client, catalog):
+    song = catalog.song_by_slug["alaniaris"]
+    r = client.get("/song/alaniaris")
+    assert r.status_code == 301
+    assert r.headers["Location"].endswith(f"/artist/{song.artist.slug}#alaniaris")
 
 
 def test_every_artist_has_songs_and_slugs_are_short_and_unique(catalog):
@@ -23,13 +32,13 @@ def test_every_artist_has_songs_and_slugs_are_short_and_unique(catalog):
 def test_duplicate_titles_are_both_reachable(client, catalog):
     pyretos = [s for s in catalog.songs if s.en_name == "Pyretos"]
     assert len(pyretos) == 2
-    for s in pyretos:
-        assert client.get(f"/song/{s.slug}").status_code == 200
+    targets = {client.get(f"/song/{s.slug}").headers["Location"] for s in pyretos}
+    assert len(targets) == 2  # each lands on its own artist page / anchor
 
 
 def test_legacy_name_urls_redirect_permanently(client):
     r = client.get("/song/Alaniaris")
-    assert r.status_code == 301 and r.headers["Location"].endswith("/song/alaniaris")
+    assert r.status_code == 301 and r.headers["Location"].endswith("#alaniaris")
     r = client.get("/artist/Vamvakaris%20Markos")
     assert r.status_code == 301 and r.headers["Location"].endswith("/artist/vamvakaris-markos")
 
@@ -43,6 +52,8 @@ def test_unknown_urls_give_friendly_404(client):
 def test_search_api(client):
     data = client.get("/search?term=mou").get_json()
     assert data and {"type", "slug", "label", "label_gr", "sub", "url"} <= data[0].keys()
+    song = next(r for r in data if r["type"] == "song")
+    assert song["url"] == f"/artist/{client.application.extensions['catalog'].song_by_slug[song['slug']].artist.slug}#{song['slug']}"
     assert client.get("/search?term=").get_json() == []
     assert client.get("/search?term=" + "a" * 200).get_json() == []
     assert client.get("/search?term=mou&artist=unknown").get_json() == []
@@ -69,7 +80,7 @@ def test_security_headers(client):
 
 
 def test_no_inline_script_or_style_in_pages(client, catalog):
-    for url in ("/", f"/artist/{catalog.artists[0].slug}", f"/song/{catalog.songs[0].slug}", "/find?q=mou"):
+    for url in ("/", f"/artist/{catalog.artists[0].slug}", "/find?q=mou"):
         html = client.get(url).get_data(as_text=True)
         assert not re.search(r"<script(?![^>]*\bsrc=)", html), url
         assert " style=" not in html, url
@@ -79,4 +90,18 @@ def test_healthz_robots_sitemap(client, catalog):
     assert client.get("/healthz").data == b"ok"
     assert b"Sitemap:" in client.get("/robots.txt").data
     sitemap = client.get("/sitemap.xml").get_data(as_text=True)
-    assert sitemap.count("<url>") == 1 + len(catalog.artists) + len(catalog.songs)
+    assert sitemap.count("<url>") == 1 + len(catalog.artists)  # songs live on artist pages
+
+
+def test_favicon_and_manifest(client):
+    ico = client.get("/favicon.ico")
+    assert ico.status_code == 200 and ico.data[:4] == b"\x00\x00\x01\x00"
+    assert client.get("/static/img/favicon.svg").status_code == 200
+    assert client.get("/static/img/apple-touch-icon.png").mimetype == "image/png"
+    manifest = client.get("/static/site.webmanifest").get_json(force=True)
+    assert manifest["name"] == "Rebetiko Music"
+    for icon in manifest["icons"]:
+        assert client.get(icon["src"]).status_code == 200
+    html = client.get("/").get_data(as_text=True)
+    for needle in ("favicon.svg", "/favicon.ico", "apple-touch-icon.png", "site.webmanifest"):
+        assert needle in html

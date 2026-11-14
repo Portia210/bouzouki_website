@@ -14,7 +14,7 @@
     {% endif %}
 
     {% if artists %}
-    <h2 class="player-label">Artists</h2>
+    <h2 class="player-label mb-3">Artists</h2>
     <ul class="artist-grid artist-grid-sm mb-4">
         {% for artist in artists %}
         <li>
@@ -29,11 +29,11 @@
     {% endif %}
 
     {% if songs %}
-    <h2 class="player-label">Songs</h2>
+    <h2 class="player-label mb-3">Songs</h2>
     <ul class="song-list">
         {% for song in songs %}
         <li>
-            <a class="song-row" href="{{ url_for('view_song', slug=song.slug) }}">
+            <a class="song-row" href="{{ url_for('artist_songs', slug=song.artist.slug, _anchor=song.slug) }}">
                 <span class="song-title">{{ song.en_name }}<small>{{ song.gr_name }} · {{ song.artist.en_name }}</small></span>
                 <span class="song-go" aria-hidden="true">→</span>
             </a>

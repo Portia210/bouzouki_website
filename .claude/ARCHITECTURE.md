@@ -11,9 +11,10 @@ Pages are Jinja2 + Bootstrap 5.3 (served locally, no CDN) + small vanilla JS fil
 
 ## Request / data flow
 - `GET /` → artists sorted by song count → `index.html`
-- `GET /artist/<slug>`, `/song/<slug>` → dict lookup in `Catalog`; old `/…/<en_name>` URLs 301 to the slug
+- `GET /artist/<slug>#<song slug>` → dict lookup in `Catalog`; one shared player (`static/js/artist.js`) is driven by the list/hash. Old `/artist/<en_name>` 301 to the slug
+- `GET /song/<slug or old en_name>` → 301 to `/artist/<artist slug>#<song slug>` (songs have no page of their own)
 - `GET /search?term=&artist=&limit=` → `SearchIndex.search` → JSON list (artists then songs)
-- `GET /find?q=` → same index, HTML results page
+- `GET /find?q=` → same index, HTML results page (no-JS / no-match fallback; the search box opens the best match directly)
 - `GET /images/<artist slug>` → BLOB from DB on demand, `lru_cache`d, ETag + 7-day cache
 - `/healthz`, `/robots.txt`, `/sitemap.xml`
 
@@ -34,12 +35,12 @@ Slugs: `textkeys.make_slug` (≤3 significant words, ≤26 chars), duplicates ge
 | `textkeys.py` | `phonetic_key` (Greek/Latin spelling → one key), `make_slug` |
 | `search.py` | `SearchIndex`: word/prefix/substring scoring, typo fallback (difflib) |
 | `db_migrate.py`, `migrations/` | Versioned, reversible schema changes |
-| `templates/`, `static/` | `static/fonts/` = Inter (OFL); `base.html` + `_macros.html`; `css/styles.css`; `js/search.js`, `artist.js`, `theme.js` |
+| `templates/`, `static/` | `static/fonts/` = Inter (OFL); `base.html` + `_macros.html`; `css/styles.css`; `js/search.js`, `artist.js`, `theme.js`; icons: `img/logo.svg` (source), `favicon.svg`, `favicon.ico`, PNGs, `site.webmanifest` |
 | `tests/` | pytest suite (runs against the real catalog and temp legacy DBs) |
 | `crawling_scripts/`, `db_games.py`, `automation.py`, `images.ipynb`, `jsons/`, `artists.csv`, `images/` | Offline data collection (Selenium); not imported by the app. `images/` is git-ignored |
 
 ## API surface
-5 routes + health/robots/sitemap in `app.py`. Limits: 600/hour default per IP, `/search`
+6 routes + favicon/health/robots/sitemap in `app.py`. Limits: 600/hour default per IP, `/search`
 90/min, `/images` 300/min; static and `/healthz` exempt. In-memory storage unless
 `RATELIMIT_STORAGE_URI` is set (counts are per gunicorn worker).
 

@@ -1,5 +1,5 @@
-// Search-as-you-type for every <form class="js-search">: grouped results, keyboard
-// navigation, Enter on a plain query falls through to the /find results page.
+// Search-as-you-type for every <form class="js-search">: results, keyboard navigation,
+// Enter opens the highlighted (or best) result.
 (function () {
     function el(tag, className, text) {
         var node = document.createElement(tag);
@@ -71,7 +71,13 @@
             if (list.hidden || !items.length) return;
             if (e.key === "ArrowDown") { e.preventDefault(); highlight((active + 1) % items.length); }
             else if (e.key === "ArrowUp") { e.preventDefault(); highlight((active - 1 + items.length) % items.length); }
-            else if (e.key === "Enter" && active >= 0) { e.preventDefault(); window.location.href = items[active].href; }
+        });
+        // Enter / Search button opens the best match straight away; /find is only the no-JS and no-match fallback.
+        form.addEventListener("submit", function (e) {
+            if (!list.hidden && items.length && input.value.trim().length >= 2) {
+                e.preventDefault();
+                window.location.href = items[active >= 0 ? active : 0].href;
+            }
         });
         document.addEventListener("click", function (e) { if (!form.contains(e.target)) close(); });
         input.addEventListener("focus", function () { if (items.length) { list.hidden = false; input.setAttribute("aria-expanded", "true"); } });

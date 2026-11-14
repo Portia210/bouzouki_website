@@ -9,8 +9,13 @@
     <meta name="description" content="{% block description %}Rebetiko songs with the original recording and a bouzouki sheet-music lesson for each. Search in Greek or in any spelling of the transliteration.{% endblock %}">
     <meta property="og:title" content="{{ self.title() }}">
     <meta property="og:type" content="website">
-    <meta property="og:image" content="{{ url_for('static', filename='img/logo.png', _external=True) }}">
-    <link rel="icon" href="{{ url_for('static', filename='img/logo2.png') }}">
+    <meta property="og:image" content="{{ url_for('static', filename='img/icon-512.png', _external=True) }}">
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ url_for('favicon') }}" sizes="48x48">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+    <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0a0f1d" media="(prefers-color-scheme: dark)">
     {{ bootstrap.load_css() }}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
@@ -21,7 +26,7 @@
     <header class="site-header">
         <div class="container-xxl d-flex flex-wrap align-items-center gap-2 gap-md-3 py-2 py-md-3">
             <a class="brand" href="{{ url_for('home') }}">
-                <img src="{{ url_for('static', filename='img/logo2.png') }}" width="40" height="40" alt="">
+                <img src="{{ url_for('static', filename='img/logo.svg') }}" width="38" height="38" alt="">
                 <span>Rebetiko Music</span>
             </a>
             {% block header_search %}{{ search_form() }}{% endblock %}

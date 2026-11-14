@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b6cf0"/><stop offset="1" stop-color="#1a3aa8"/></linearGradient>
+    <linearGradient id="wood" x1="0.1" y1="0" x2="0.9" y2="1"><stop offset="0" stop-color="#eaa044"/><stop offset="1" stop-color="#8f4c14"/></linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <g transform="translate(32 32) scale(1.07) rotate(40) translate(-32 -31.5)">
+    <rect x="29.2" y="6" width="5.6" height="27" fill="#2a190e"/>
+    <rect x="27" y="0.5" width="10" height="8.2" rx="1.8" fill="#2a190e"/>
+    <g fill="#f6efdc"><circle cx="24.8" cy="2.2" r="1.25"/><circle cx="24.8" cy="4.6" r="1.25"/><circle cx="24.8" cy="7" r="1.25"/><circle cx="39.2" cy="2.2" r="1.25"/><circle cx="39.2" cy="4.6" r="1.25"/><circle cx="39.2" cy="7" r="1.25"/></g>
+    <path d="M29 11h6M29 14.5h6M29 18h6M29 21.5h6M29 25h6M29 28.5h6" stroke="#d9c9a3" stroke-width=".5"/>
+    <g transform="translate(32 62.5) scale(.76 .84) translate(-32 -62.5)">
+      <path d="M32 19.5c6.2 0 8.2 10.5 14.2 18.5 5 6.7 5.6 12 2.8 16.3-3 4.6-9.4 7.2-17 7.2s-14-2.6-17-7.2c-2.8-4.3-2.2-9.6 2.8-16.3C23.8 30 25.8 19.5 32 19.5z" fill="url(#wood)" stroke="#4d2608" stroke-width="1.5"/>
+      <path d="M32 19.5c6.2 0 8.2 10.5 14.2 18.5 5 6.7 5.6 12 2.8 16.3-3 4.6-9.4 7.2-17 7.2s-14-2.6-17-7.2c-2.8-4.3-2.2-9.6 2.8-16.3C23.8 30 25.8 19.5 32 19.5z" transform="translate(32 44) scale(.8) translate(-32 -44)" fill="none" stroke="#f6efdc" stroke-width="1.9" stroke-dasharray="3 2" stroke-linecap="round"/>
+    </g>
+    <ellipse cx="32" cy="50" rx="3.4" ry="4.2" fill="#2a190e"/>
+    <rect x="26.5" y="57" width="11" height="2" rx="1" fill="#2a190e"/>
+    <path d="M30.2 8.5V58M31.4 8.5V58M32.6 8.5V58M33.8 8.5V58" stroke="#f6efdc" stroke-width=".4" opacity=".85"/>
+  </g>
+</svg>

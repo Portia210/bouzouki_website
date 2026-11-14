@@ -1,41 +1,60 @@
-// Artist page: on wide screens a click on a song loads it in the side player instead of
-// navigating; on phones the link opens the song page. Also filters the song list.
+// Artist page: the song list drives one shared player. A click, a #song-slug in the URL
+// (from search results) or a hash change loads that song; there are no per-song pages.
 (function () {
     var wide = window.matchMedia("(min-width: 768px)");
+    var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     var list = document.getElementById("song-list");
+    var panel = document.getElementById("player-panel");
     var rows = Array.prototype.slice.call(list.querySelectorAll(".song-row"));
     var embed = "https://www.youtube-nocookie.com/embed/";
+    var watch = "https://www.youtube.com/watch?v=";
+    var baseTitle = document.title;
+
+    function byId(id) { return document.getElementById(id); }
 
     function select(row) {
         rows.forEach(function (r) { r.removeAttribute("aria-current"); });
         row.setAttribute("aria-current", "true");
-        document.getElementById("player-title").textContent = row.dataset.title;
-        document.getElementById("player-original").src = embed + row.dataset.original;
-        document.getElementById("player-lesson").src = embed + row.dataset.lesson;
-        document.getElementById("player-link").href = row.href;
+        byId("player-title").textContent = row.dataset.title;
+        byId("player-title-gr").textContent = row.dataset.titleGr;
+        byId("player-original").src = embed + row.dataset.original;
+        byId("player-lesson").src = embed + row.dataset.lesson;
+        byId("player-original-link").href = watch + row.dataset.original;
+        byId("player-lesson-link").href = watch + row.dataset.lesson;
+        byId("player-more").href = "https://www.youtube.com/results?search_query=" + encodeURIComponent(row.dataset.query);
+        document.title = row.dataset.title + " — " + list.dataset.artistName + " — Rebetiko Music";
+    }
+
+    function fromHash() {
+        var slug = decodeURIComponent(location.hash.slice(1));
+        return rows.filter(function (r) { return r.dataset.slug === slug; })[0];
+    }
+
+    function applyHash() {
+        var row = fromHash();
+        if (!row) return;
+        select(row);
+        // Wide: keep the chosen row in view next to the player. Phone: the player sits above the list.
+        if (wide.matches) row.scrollIntoView({ block: "center" });
+        else panel.scrollIntoView({ block: "start" });
     }
 
     list.addEventListener("click", function (e) {
         var row = e.target.closest(".song-row");
-        if (!row || !wide.matches || e.metaKey || e.ctrlKey || e.shiftKey) return;
+        if (!row || e.metaKey || e.ctrlKey || e.shiftKey) return;
         e.preventDefault();
         select(row);
         history.replaceState(null, "", "#" + row.dataset.slug);
+        if (!wide.matches) panel.scrollIntoView({ behavior: reduce.matches ? "auto" : "smooth", block: "start" });
     });
 
-    var fromHash = rows.filter(function (r) { return "#" + r.dataset.slug === location.hash; })[0];
-    if (rows.length) {
-        if (fromHash) {
-            select(fromHash);
-            fromHash.scrollIntoView({ block: "center" });
-        } else {
-            rows[0].setAttribute("aria-current", "true");
-        }
-    }
+    window.addEventListener("hashchange", applyHash);
+    if (fromHash()) applyHash();
+    else if (rows.length) { rows[0].setAttribute("aria-current", "true"); document.title = baseTitle; }
 
-    var filter = document.getElementById("song-filter");
+    var filter = byId("song-filter");
     if (!filter) return;
-    var empty = document.getElementById("filter-empty");
+    var empty = byId("filter-empty");
     var timer = null, controller = null;
 
     function show(slugs) {

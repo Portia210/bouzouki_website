@@ -13,6 +13,12 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
     - Traps / decisions: <what the next session must know>
     - Next: <what's owed, open questions for the developer>
 
+## 2026-11-14 — Icon, artist-page layout, songs open in the artist page
+- Changed: Greek-bouzouki logo/favicon set (SVG source `static/img/logo.svg`; ICO/PNGs rendered from it with headless Chrome); no song pages any more — `/song/<slug>` and search results go to `/artist/<slug>#<song>`, Enter opens the best match; artist page list scrolls with the page, player panel sticky (phone: player above the list); "Open on YouTube" link per player.
+- Verified: pytest (39), headless-Chrome screenshots + DOM checks (hash select, search → hash, header position).
+- NOT verified: the reported home-page 500 — not reproducible; most likely the dev server briefly ran new templates with old `app.py` while I was editing (restart the server). Real devices/Safari; why some videos say "unavailable" for the developer (likely region).
+- Next: if the 500 comes back, send the traceback.
+
 ## 2026-11-14 — Search, DB, redesign, Railway prep
 - Changed: phonetic search (`textkeys.py`, `search.py`), schema v2 via `db_migrate.py` (slugs, artist FK, indexes), `create_app` refactor with CSP/ETag/health/sitemap, new Bootstrap-based UI with vanilla JS (jQuery removed), Procfile/`railway.json`, `images/` untracked, pytest suite.
 - Verified: `uv run pytest -q` (37 pass); migration round trip on the real DB copy; gunicorn start + `/healthz`; headless-Chrome screenshots (desktop, mobile, dark) and scripted search/filter/player checks.

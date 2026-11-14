@@ -1,7 +1,7 @@
 # Rebetiko Music
 
 Flask catalog of Greek rebetiko songs: for each song, the original recording and a
-bouzouki sheet-music lesson (YouTube embeds). Search works in Greek and in any spelling of
+bouzouki sheet-music lesson (YouTube embeds). Songs open inside their artist's page. Search works in Greek and in any spelling of
 the Latin transliteration (`mou` / `moy` / `μου`).
 
 ## Run locally

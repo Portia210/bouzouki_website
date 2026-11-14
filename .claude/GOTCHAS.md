@@ -13,6 +13,7 @@ being true.
 | CSP forbids inline `<script>` and `style=` | New inline code silently does nothing | Put JS in `static/js/`, styling in `styles.css` (`test_no_inline_script_or_style_in_pages`) |
 | `.gitignore` contains `*.db` | A new `.db` file is ignored | `!instance/music.db` keeps the main DB tracked; use `git add -f` for others |
 | `pkill -f <text>` in a Bash tool call matches the call itself | Shell exits 144 | Kill by port: `fuser -k 5055/tcp` |
+| Some YouTube videos show "This video is unavailable" inside the embed | Region/rights restriction on YouTube's side; oEmbed and `playableInEmbed` still say OK from outside the region | Can't be fixed here; every player has an "Open on YouTube ↗" link |
 | Migrations rebuild tables | DB file doubles in size | `db_migrate.py` runs `VACUUM` afterwards |
 
 ## Known gaps

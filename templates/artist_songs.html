@@ -20,17 +20,18 @@
 
 <div class="container-xxl py-3 py-md-4">
     <div class="row g-4">
-        <div class="col-md-6 col-lg-5">
+        <div class="col-md-6 col-lg-5 order-2 order-md-1">
             {% if artist.number_of_songs > 8 %}
             <input type="search" id="song-filter" class="form-control mb-3" placeholder="Filter {{ artist.number_of_songs }} songs…"
                 aria-label="Filter songs by {{ artist.en_name }}" data-artist="{{ artist.slug }}" maxlength="100">
             {% endif %}
-            <ul class="song-list" id="song-list">
+            <ul class="song-list" id="song-list" data-artist-name="{{ artist.en_name }}">
                 {% for song in artist.songs %}
                 <li data-slug="{{ song.slug }}">
-                    <a class="song-row" href="{{ url_for('view_song', slug=song.slug) }}"
+                    <a class="song-row" href="{{ url_for('artist_songs', slug=artist.slug, _anchor=song.slug) }}"
                         data-slug="{{ song.slug }}" data-original="{{ song.video_id }}" data-lesson="{{ song.demo_id }}"
-                        data-title="{{ song.en_name }}">
+                        data-title="{{ song.en_name }}" data-title-gr="{{ song.gr_name }}"
+                        data-query="{{ song.gr_name ~ ' ' ~ artist.gr_name }}">
                         <span class="song-title">{{ song.en_name }}<small>{{ song.gr_name }}</small></span>
                         <span class="song-go" aria-hidden="true">→</span>
                     </a>
@@ -40,14 +41,14 @@
             <p class="empty-note" id="filter-empty" hidden>No songs match. Spelling doesn't have to be exact — try fewer letters.</p>
         </div>
 
-        <aside class="col-md-6 col-lg-7 d-none d-md-block">
+        <aside class="col-md-6 col-lg-7 order-1 order-md-2">
             <div class="player-panel" id="player-panel">
                 <h2 class="player-title" id="player-title">{{ first.en_name }}</h2>
-                <h3 class="player-label">Original recording</h3>
-                {{ player(first.video_id, 'Original recording', 'player-original') }}
-                <h3 class="player-label">Sheet-music lesson</h3>
-                {{ player(first.demo_id, 'Bouzouki sheet-music lesson', 'player-lesson') }}
-                <p class="mt-3"><a id="player-link" href="{{ url_for('view_song', slug=first.slug) }}">Open song page →</a></p>
+                <p class="greek-name player-title-gr" id="player-title-gr">{{ first.gr_name }}</p>
+                {{ player('Original recording', first.video_id, 'Original recording', 'player-original', 'player-original-link') }}
+                {{ player('Sheet-music lesson', first.demo_id, 'Bouzouki sheet-music lesson', 'player-lesson', 'player-lesson-link') }}
+                <p class="player-more"><a id="player-more" target="_blank" rel="noopener"
+                    href="https://www.youtube.com/results?search_query={{ (first.gr_name ~ ' ' ~ artist.gr_name)|urlencode }}">More videos of this song on YouTube ↗</a></p>
             </div>
         </aside>
     </div>
