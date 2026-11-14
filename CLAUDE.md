@@ -6,16 +6,16 @@
 
 ## Project facts
 
-**What this is:** Flask catalog of Greek rebetiko/bouzouki songs: artist pages, song pages
-with embedded YouTube video + sheet-music video, and a song search box.
-**Stack:** Python 3.11, Flask, Bootstrap-Flask (Bootstrap 5), jQuery UI autocomplete,
+**What this is:** Flask catalog of Greek rebetiko/bouzouki songs: artist pages that play each song's
+YouTube recording + sheet-music lesson, and a phonetic Greek/Latin search box.
+**Stack:** Python 3.11, Flask, Bootstrap-Flask (Bootstrap 5), vanilla JS,
 SQLite (`instance/music.db`), uv (`pyproject.toml` + `uv.lock`).
 **Environment:** WSL2 Ubuntu. Needs `FLASK_SECRET_KEY` in `.env` (see `.env.example`).
 
 | Task | Command |
 |---|---|
 | Install | `uv sync` |
-| Run locally | `uv run python app.py` |
+| Run locally | `uv run python main.py` (auto-reload, localhost) |
 | Lint / type-check | none configured |
 | All tests / one test | `uv run pytest -q` / `uv run pytest -q tests/test_x.py::test_y` |
 | Build | none (no build step) |
@@ -28,8 +28,9 @@ Architecture, data model and flows: `.claude/ARCHITECTURE.md`.
 
 | Path | Purpose |
 |---|---|
-| `app.py` / `classes.py` | Routes / data classes + `import_db()` |
-| `templates/`, `static/` | Jinja2 pages / CSS, JS, logos |
+| `app.py` / `classes.py` | Routes (`create_app`) / data classes + `load_catalog()` |
+| `main.py` | Dev server with auto-reload (not for production) |
+| `templates/`, `static/` | Jinja2 pages / CSS, JS, fonts, icons |
 | `instance/music.db` | Artists, songs, artist images (BLOB) |
 | `crawling_scripts/`, `db_games.py`, `automation.py` | One-off Selenium scrapers (Patreon/YouTube); not used by the app |
 
