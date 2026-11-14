@@ -10,6 +10,10 @@
     var watch = "https://www.youtube.com/watch?v=";
     var search = "https://www.youtube.com/results?search_query=";
     var baseTitle = document.title;
+    var frame = document.getElementById("player-frame");
+    var tabs = Array.prototype.slice.call(document.querySelectorAll(".player-tab"));
+    var tab = "lesson";  // "lesson" | "original": one big video at a time, the choice is remembered
+    try { if (localStorage.getItem("playerTab") === "original") tab = "original"; } catch (e) { /* storage blocked */ }
 
     function byId(id) { return document.getElementById(id); }
     function current() { return list.querySelector('.song-row[aria-current="true"]'); }
@@ -95,12 +99,17 @@
         });
     }
 
-    function stopVideos() {  // removing the iframes is the only way to stop a hidden player
-        ["player-original", "player-lesson"].forEach(function (id) {
-            var frame = byId(id);
-            frame.dataset.token = String(Number(frame.dataset.token || 0) + 1);
-            frame.textContent = "";
-        });
+    function stopVideos() {  // removing the iframe is the only way to stop a hidden player
+        frame.dataset.token = String(Number(frame.dataset.token || 0) + 1);
+        frame.textContent = "";
+    }
+
+    function showTab(row) {
+        tabs.forEach(function (t) { t.setAttribute("aria-selected", String(t.dataset.tab === tab)); });
+        if (!row) return;
+        var id = tab === "original" ? row.dataset.original : row.dataset.lesson;
+        byId("player-yt").href = watch + id;
+        mount(frame, id, row.dataset.query, tab === "original");
     }
 
     // ---- placement ------------------------------------------------------------------
@@ -125,13 +134,10 @@
         row.setAttribute("aria-current", "true");
         byId("player-title").textContent = row.dataset.title;
         byId("player-title-gr").textContent = row.dataset.titleGr;
-        byId("player-original-link").href = watch + row.dataset.original;
-        byId("player-lesson-link").href = watch + row.dataset.lesson;
         byId("player-more").href = search + encodeURIComponent(row.dataset.query);
         if (!keepTitle) document.title = row.dataset.title + " — " + list.dataset.artistName + " — Bouzouki Rebetico";
         place();  // move first: moving an iframe reloads it
-        mount(byId("player-original"), row.dataset.original, row.dataset.query, true);
-        mount(byId("player-lesson"), row.dataset.lesson, row.dataset.query, false);
+        showTab(row);
     }
 
     function close() {
@@ -174,12 +180,21 @@
         if (row) bringIntoView(row, true);
     });
 
+    tabs.forEach(function (t) {
+        t.addEventListener("click", function () {
+            tab = t.dataset.tab;
+            try { localStorage.setItem("playerTab", tab); } catch (e) { /* ignore */ }
+            showTab(current());
+        });
+    });
+
     wide.addEventListener("change", function () {
         var row = current() || (wide.matches ? rows[0] : null);
         if (row) select(row, true); else place();
     });
     window.addEventListener("hashchange", applyHash);
 
+    showTab(null);  // reflect the remembered tab even if no song is open yet (phones)
     if (fromHash()) applyHash();
     else if (wide.matches && rows.length) select(rows[0], true);  // side player starts on the first song
     else place();

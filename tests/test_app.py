@@ -7,10 +7,11 @@ def test_pages_render(client, catalog):
     assert client.get("/").status_code == 200
     page = client.get(f"/artist/{artist.slug}")
     assert page.status_code == 200
-    # the player starts on the first song; original recording = video_id, lesson = demo_id
     html = page.get_data(as_text=True)
-    assert html.index("player-original") < html.index("player-lesson")
-    assert f"watch?v={song.video_id}" in html and f"watch?v={song.demo_id}" in html  # plain links, for videos that can't be embedded
+    # one tabbed player: the lesson (demo_id) is the default, the original (video_id) is the other tab
+    assert html.index('id="tab-lesson"') < html.index('id="tab-original"') and 'id="player-frame"' in html
+    assert f"watch?v={song.demo_id}" in html  # plain YouTube link, for videos that can't be embedded
+    assert f'data-original="{song.video_id}"' in html and f'data-lesson="{song.demo_id}"' in html
     assert f'data-slug="{song.slug}"' in html
     # phone UX hooks used by artist.js: list first, player re-homed under the tapped song
     assert 'id="player-home"' in html and 'id="player-close"' in html

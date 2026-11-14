@@ -219,28 +219,41 @@ a { text-underline-offset: 3px; }
 .song-row { scroll-margin-top: 8.5rem; }
 #song-filter { border-radius: 999px; padding: .65rem 1.1rem; }
 
-/* ---- players ------------------------------------------------------------ */
-/* The panel stays in view while the song list scrolls; the two frames are sized so both fit the viewport. */
+/* ---- artist layout + player ------------------------------------------------ */
+.container-xxl.container-wide { max-width: 1680px; }  /* artist page: let the video use big screens */
+.artist-layout { display: grid; gap: 1.5rem; }
+@media (min-width: 768px) {
+    /* Narrow song column, the rest goes to the video. */
+    .artist-layout { grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr); gap: 2rem; align-items: start; }
+}
 .player-panel { padding: 1rem; scroll-margin-top: 8rem; background: var(--surface); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); }
 @media (min-width: 768px) {
-    .player-panel {
-        position: sticky; top: 5.5rem; padding: 1.25rem; scroll-margin-top: 6rem;
-        width: min(100%, calc(max(20rem, (100vh - 16rem) * 8 / 9) + 2.5rem)); margin-inline: auto;
-        max-height: calc(100vh - 6.5rem); overflow-y: auto; /* never let the bottom of a tall panel be unreachable */
-    }
+    .player-panel { position: sticky; top: 5.5rem; padding: 1.25rem; scroll-margin-top: 6rem; }
 }
 .player-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
 .player-close { flex: none; border: 1px solid var(--line); color: var(--muted); background: var(--bg); }
 .song-list li > .player-panel { margin: .5rem 0 .75rem; }
 .player-title { font-size: 1.3rem; font-weight: 700; margin: 0; }
 .player-title-gr { font-size: 1rem; margin: 0 0 .75rem; }
-.player-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 1rem 0 .5rem; }
-.player-head:first-of-type { margin-top: 0; }
+.player-tabs { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; margin-bottom: .75rem; }
+.player-tablist { display: flex; flex-wrap: wrap; gap: .4rem; }
+.player-tab {
+    padding: .45rem 1rem; border: 1px solid var(--line); border-radius: 999px; background: var(--bg);
+    color: var(--muted); font-size: .9rem; font-weight: 650;
+}
+.player-tab:hover { color: var(--ink); border-color: var(--accent); }
+.player-tab[aria-selected="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
 .player-label { display: flex; align-items: center; gap: .5rem; font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 0; }
 .player-label::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--accent); }
 .player-yt { font-size: .85rem; white-space: nowrap; }
 .player-more { margin: .9rem 0 0; font-size: .95rem; }
-.player-frame { border-radius: 16px; overflow: hidden; background: #000; box-shadow: var(--shadow); }
+/* 16:9, as wide as the column allows but never taller than what fits next to the title and tabs. */
+.player-frame {
+    position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 16px; background: #000; box-shadow: var(--shadow);
+    width: min(100%, calc((100vh - 17rem) * 16 / 9)); min-width: min(100%, 22rem);
+}
+.player-frame > * { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+@media (max-width: 767px) { .player-frame { width: 100%; min-width: 0; } }
 .player-fallback {
     display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1rem; padding: 1rem; text-align: center;
     background: radial-gradient(circle at 50% 0%, #26304f, #0d1120 70%); color: #e9eefa;

@@ -19,6 +19,7 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
 - NOT verified: videos on the real Railway https domain; browser tabs showing the new favicon (cache).
 - Also: `cryptography` (dev dep) + `main.py --https`; verified the previously "unavailable" original plays on https://localhost. Phone artist page: list first, player opens under the tapped song (tap again/Close folds it, stops playback); desktop unchanged.
 - Also: local https removed (slow); WebP thumbnails (home 9.9 MB → 1.6 MB); 5 artist cards per row; static URLs versioned + 1-year cache in prod; players use the YouTube iframe API (CSP allows https://www.youtube.com scripts) and show a fallback card on error 150.
+- Also: artist page = wide grid (song column + one big tabbed video: lesson default, choice remembered; no inner scrollbar); favicon = flat white bouzouki on the blue tile (alternatives B monogram / C plectrum were offered, not kept).
 - Next: after the Railway deploy, check which videos still show the fallback card (those are region/owner blocks).
 
 ## 2026-11-14 — Icon, artist-page layout, songs open in the artist page
