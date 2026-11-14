@@ -13,6 +13,7 @@ pdf_sync.py report  what needs a human look: unmatched folders (+3 closest songs
                     PDF / one of the two, names-only matches, ties, not-yet-uploaded, stale DB keys
 pdf_sync.py apply   + --root (the folder, mounted) → sha256 → HEAD → PUT → HEAD → write DB key
 pdf_sync.py verify  DB ⇄ bucket: 0 missing, 0 orphans (--deep also checks object metadata)
+pdf_sync.py rekey   give old-style keys (pdf/<song_id>/…) random ones by copying inside R2 (used once, on 2026-11-14)
 pdf_sync.py prune   delete orphans (dry run unless --yes)
 ```
 Run (WSL): `sudo mount -t drvfs D: /mnt/d` once per boot, then
@@ -29,9 +30,11 @@ the one bucket, Object Read & Write). The DB written is `instance/music.db` (or 
 consistent `music.db.pre-pdfsync-<timestamp>.bak` copy is made by every run that changes the DB (git-ignored `*.bak`). `manifest.json` in the repo root is git-ignored too. Commit the DB to ship the keys.
 
 ## Rules that make it safe
-1. **Keys come from `song_id` only:** `pdf/<song_id>/sheet.pdf`, `pdf/<song_id>/tab.pdf` (`object_key`).
-   Names, slugs and Greek never enter a key, so renaming a song/artist changes nothing in the bucket.
-   The download name is built per request from the current DB names (`app.py`, `storage.content_disposition`).
+1. **Keys are random and unrelated to the song:** `pdf/<12 random chars a-z2-7>.pdf` (`new_key`, 60 bits), one per
+   file, made once and stored in `songs.score_key` / `tab_key`; the sheet and tab of a song can't be derived from
+   each other, and nothing in a key is a name or an id. Renaming a song/artist changes nothing in the bucket. The
+   download name is built per request from the current DB names (`app.py`, `storage.content_disposition`).
+   Secrecy of the key is only a second layer: the bucket is private and access is a 5-minute presigned URL.
 2. **The DB is the source of truth.** `songs.score_key` / `tab_key` say which object belongs to a song.
    A key is written **only after** the object was HEAD-verified in the bucket in the same run.
 3. **Matching never guesses** (`match_folders`). A folder is accepted only if its Greek artist and song names
@@ -48,16 +51,20 @@ consistent `music.db.pre-pdfsync-<timestamp>.bak` copy is made by every run that
    prints a `REVIEW` line for every pick whose words don't match `<song> <artist>` (any order) or that is a
    ΠΑΡΤΙΤΟΥΡΑ copy — 208 today, mostly punctuation and typos, a few really different (e.g. another artist's
    name): read them before `apply`.
-5. **Idempotent:** each object stores `sha256`, `song-id`, `demo-id` as metadata. A file is uploaded only if
+5. **Idempotent:** each object stores `sha256`, `song-id`, `kind` (sheet/tab) and `demo-id` as metadata. An existing
+   DB key is never replaced, so a second run keeps every key. A file is uploaded only if
    the object is missing or its size/sha256 differ. A second run uploads nothing.
 6. **File checks before upload:** content must start with `%PDF` (no empty files, no error pages saved as .pdf), its
    size must equal the manifest's (stale manifest), and its resolved path must stay inside `--root`
    (no `..`, no symlink out). After the PUT, a HEAD must show the same size **and** sha256 metadata.
 7. **One failure doesn't stop the rest;** a failed file gets no key and the exit code is 1.
 8. **Bucket stays private;** the site hands out 5-minute presigned URLs to the signed-in admin only.
-9. **Recovery (not automated):** each object carries `song-id` and `demo-id`, so the DB links could be rebuilt
-   from the bucket; there is no `relink` command yet. If the DB loses its keys, run `apply` again: unchanged
-   objects are not re-uploaded, only the keys are written back.
+9. **Keys are saved to the DB after every chunk of 100 uploads** (`CHUNK`), so a run that dies loses no uploaded object.
+   Recovery from a DB that lost its keys is **not** automatic: a song without a key gets a *new* random key and
+   its file is uploaded again, which leaves the earlier objects as orphans for `verify` to list and `prune` to
+   remove. (Metadata `song-id` + `kind` would allow a `relink` command; none exists.)
+   `rekey` copies each object inside the bucket, checks size and sha256 of the copy, commits the DB per chunk, and
+   only then deletes the old object; a failed copy leaves the old key and object alone.
 10. **`prune` is guarded:** orphans are computed from the *local* DB only, so it refuses (even with `--yes`) when the DB
    references no object at all, and refuses to delete more than 10% of the bucket without `--force`. It reports
    per-object delete errors. A DB key outside the `pdf/<song_id>/…` convention is flagged by `verify`, and its

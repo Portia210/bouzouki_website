@@ -5,7 +5,7 @@
 **Approved by developer (2026-11-14):** private bucket + admin login (D1/D4 settled: no public URL, no custom domain); push to `master` freely (no users yet); DB changes are made on the local DB first, then shipped by committing it.
 
 ## Design (decided)
-- **Keys from `song_id`:** `pdf/<song_id>/sheet.pdf`, `pdf/<song_id>/tab.pdf`. Names never enter keys, so renames touch nothing in R2. The download name is built per request from the current DB names.
+- **Random keys:** `pdf/<12 random chars>.pdf`, made once and stored in the DB; never derived from names or ids, so renames touch nothing in R2 and the files can't be enumerated. The download name is built per request from the current DB names.
 - **DB = source of truth:** `songs.score_key` / `tab_key` (migration 0004, done). A key is written only after the object is HEAD-verified.
 - **Access:** `/admin` (one password, `ADMIN_PASSWORD`), 7-day session renewed on every visit, `/pdf/...` redirects to a 5-minute presigned URL. Public HTML is identical for everyone (Railway edge cache); lock → document icon is swapped by JS after `/admin/session`.
 - **Dependency:** `boto3` (approved by proceeding; used by `storage.py` and the sync script).

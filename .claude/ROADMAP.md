@@ -25,7 +25,7 @@ Settled 2026-11-14: bucket is private (D1), no custom domain (D4), PDFs only for
 
 ## Part P — Sheet-music PDFs on R2 (plan: `.claude/plans/pdf-upload.md`)
 
-- [x] **P1** — Run the real upload (done 2026-11-14: 1972 PDFs, `verify --deep` clean; DB keys local, not committed yet)
+- [x] **P1** — Run the real upload (done 2026-11-14: 1972 PDFs under random keys, `verify --deep` clean, DB committed)
   - Goal: upload the 1972 picked PDFs and write their keys to the local DB.
   - Done when: `apply` has no failures; `verify --deep` reports 0 missing and 0 orphans.
   - Depends on: D: mounted in WSL (`sudo mount -t drvfs D: /mnt/d`).

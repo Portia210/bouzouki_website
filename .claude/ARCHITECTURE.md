@@ -27,7 +27,7 @@ Pages are Jinja2 + Bootstrap 5.3 (served locally, no CDN) + small vanilla JS fil
 | Song | `songs` (song_id, artist_id FK, slug UNIQUE, en_name, gr_name, video_id, demo_id, score_key, tab_key) | 1048 rows; `idx_songs_artist` | `classes.py` |
 
 `video_id` = original recording, `demo_id` = bouzouki sheet-music lesson (both YouTube ids).
-`score_key`/`tab_key` = R2 object keys of the sheet/tab PDF (`pdf/<song_id>/sheet.pdf`, `…/tab.pdf`), derived from `song_id` only, never from names; NULL = no PDF. The page HTML never contains a key.
+`score_key`/`tab_key` = R2 object keys of the sheet/tab PDF: random `pdf/<12 chars a-z2-7>.pdf`, made once by `pdf_sync.py` and kept in the DB, unrelated to names and ids; NULL = no PDF. The page HTML never contains a key.
 Slugs: `textkeys.make_slug` (≤3 significant words, ≤26 chars), duplicates get `-2`.
 
 ## Key modules

@@ -4,6 +4,7 @@
     uv run python pdf_sync.py report --manifest M.json              # what is not matched / has no PDF / is not uploaded yet
     uv run python pdf_sync.py apply  --manifest M.json --root DIR   # upload what is missing/changed, then write keys
     uv run python pdf_sync.py verify [--deep]                       # DB <-> bucket: 0 missing and 0 orphans
+    uv run python pdf_sync.py rekey  [--dry-run] [--keep-old]       # move old-style keys to random ones (copy inside R2)
     uv run python pdf_sync.py prune  [--yes]                        # delete orphans (dry run without --yes)
 
 Full logic, the manifest format and how to add other file types (mp3, mid, sib):
@@ -14,6 +15,7 @@ import argparse
 import hashlib
 import json
 import re
+import secrets
 import sqlite3
 import sys
 import unicodedata
@@ -32,13 +34,15 @@ from textkeys import phonetic_key
 @dataclass(frozen=True)
 class Kind:
     column: str  # `songs` column that stores the object key
-    filename: str  # last part of the object key
 
 
 # To upload another file type, add its Kind here (plus a migration for the column) — see UPLOAD_LOGIC.md.
-KINDS = {"sheet": Kind("score_key", "sheet.pdf"), "tab": Kind("tab_key", "tab.pdf")}
+KINDS = {"sheet": Kind("score_key"), "tab": Kind("tab_key")}
 KEY_PREFIX = "pdf/"
+KEY_ALPHABET = "abcdefghijklmnopqrstuvwxyz234567"  # base32: no look-alike characters, safe in a URL
+KEY_RE = re.compile(re.escape(KEY_PREFIX) + "[" + KEY_ALPHABET + r"]{12}\.pdf")  # 60 random bits
 CONTENT_TYPE = "application/pdf"
+CHUNK = 100  # files per batch; the DB is updated after each one
 
 TAB_RE = re.compile(r"ΤΑΜΠ\S*ΤΟΥΡΑ")  # "ΤΑΜΠΛΑΤΟΥΡΑ" and the typo "ΤΑΜΠΑΛΑΤΟΥΡΑ" seen in the folders
 SCORE_WORD = "ΠΑΡΤΙΤΟΥΡΑ"  # an alternate full score next to the plain sheet; never preferred
@@ -60,15 +64,17 @@ class Item:
     kind: str
     folder: dict
     file: dict  # {"name", "size"} from the manifest
-
-    @property
-    def key(self) -> str:
-        return object_key(self.song.song_id, self.kind)
+    key: str  # the key the DB already holds for this song and kind, or a fresh random one
 
 
-def object_key(song_id: int, kind: str) -> str:
-    """Derived from the immutable song_id only: renaming a song or artist never changes it."""
-    return f"{KEY_PREFIX}{song_id}/{KINDS[kind].filename}"
+def new_key(taken: set[str]) -> str:
+    """Random, unrelated to names and ids, so it can't be guessed or enumerated. It is made once, stored in
+    the DB (the source of truth) and never changes: renaming a song or artist leaves it alone."""
+    while True:
+        key = KEY_PREFIX + "".join(secrets.choice(KEY_ALPHABET) for _ in range(12)) + ".pdf"
+        if key not in taken:
+            taken.add(key)
+            return key
 
 
 def demo_id(link) -> str | None:
@@ -159,11 +165,12 @@ def needs_review(folder: dict, file: dict) -> bool:
 
 def build_plan(folders: list[dict], songs: list[DbSong]):
     matches, problems = match_folders(folders, songs)
+    taken = {k for s in songs for k in (s.score_key, s.tab_key) if k}
     items = []
     for folder, song, _ in matches:
         picked, issues = pick_pdfs(folder)
         problems += issues
-        items += [Item(song, kind, folder, file) for kind, file in picked.items()]
+        items += [Item(song, kind, folder, file, getattr(song, KINDS[kind].column) or new_key(taken)) for kind, file in picked.items()]
     return matches, items, problems
 
 
@@ -227,7 +234,7 @@ def sync_one(s3, bucket: str, item: Item, root: Path, dry_run: bool) -> str:
     s3.put_object(
         Bucket=bucket, Key=item.key, Body=data, ContentType=CONTENT_TYPE,
         # lets the DB links be rebuilt from the bucket alone, whatever happens to the DB
-        Metadata={"song-id": str(item.song.song_id), "demo-id": item.song.demo_id, "sha256": digest},
+        Metadata={"song-id": str(item.song.song_id), "kind": item.kind, "demo-id": item.song.demo_id, "sha256": digest},
     )
     after = head(s3, bucket, item.key)
     if not after or after["ContentLength"] != len(data) or after.get("Metadata", {}).get("sha256") != digest:
@@ -252,9 +259,11 @@ def verify(s3, bucket: str, conn, deep: bool = False) -> list[str]:
         for (kind, spec), key in zip(KINDS.items(), keys):
             if not key:
                 continue
+            if key in referenced:
+                problems.append(f"key used twice: {key}")
             referenced[key] = (song_id, kind)
-            if key != object_key(song_id, kind):
-                problems.append(f"unexpected key: song {song_id} {spec.column} = {key}")
+            if not KEY_RE.fullmatch(key):
+                problems.append(f"unexpected key (run rekey?): song {song_id} {spec.column} = {key}")
             if key not in in_bucket:
                 problems.append(f"missing in bucket: {key}")
             elif in_bucket[key] == 0:
@@ -263,12 +272,75 @@ def verify(s3, bucket: str, conn, deep: bool = False) -> list[str]:
     if deep:
         def check(key):
             meta = head(s3, bucket, key)
-            song_id = referenced[key][0]
-            if meta and (meta.get("Metadata", {}).get("song-id") != str(song_id) or meta.get("ContentType") != CONTENT_TYPE):
+            song_id, kind = referenced[key]
+            tags = (meta or {}).get("Metadata", {})
+            if meta and (tags.get("song-id") != str(song_id) or tags.get("kind") != kind or meta.get("ContentType") != CONTENT_TYPE):
                 return f"wrong metadata: {key}"
         with ThreadPoolExecutor(8) as pool:
             problems += [p for p in pool.map(check, [k for k in referenced if k in in_bucket]) if p]
     return problems
+
+
+def backup_db(conn: sqlite3.Connection) -> None:
+    """A consistent copy next to the DB, one per run, so an earlier backup is never overwritten."""
+    backup = sqlite3.connect(f"{db_path()}.pre-pdfsync-{datetime.now():%Y%m%d-%H%M%S}.bak")
+    conn.backup(backup)
+    backup.close()
+
+
+def rekey(s3, bucket: str, conn, chunk: int = 100, keep_old: bool = False, dry_run: bool = False) -> dict:
+    """Give every song whose key is not a random one (e.g. the first scheme, pdf/<song_id>/sheet.pdf) a random key.
+    The object is copied inside the bucket (no upload from the folders) and checked (size and sha256) before the
+    DB points at it; the old object is deleted only after the DB change is committed. Chunked, so a crash leaves
+    at most `chunk` unreferenced copies, which `prune` removes."""
+    columns = ", ".join(spec.column for spec in KINDS.values())
+    taken = {k for row in conn.execute(f"SELECT {columns} FROM songs") for k in row if k}
+    todo = []
+    for song_id, demo, *keys in conn.execute(f"SELECT song_id, demo_id, {columns} FROM songs"):
+        for (kind, spec), key in zip(KINDS.items(), keys):
+            if key and not KEY_RE.fullmatch(key):
+                todo.append((song_id, demo, kind, spec.column, key))
+    counts = {"to move": len(todo), "moved": 0, "failed": 0, "old deleted": 0}
+    if dry_run or not todo:
+        return counts
+    backup_db(conn)
+
+    def copy(job):
+        song_id, demo, kind, column, old, new = job
+        try:
+            before = head(s3, bucket, old)
+            if not before or not before.get("Metadata", {}).get("sha256"):
+                raise RuntimeError("the old object is missing or has no sha256 metadata")
+            tags = dict(before["Metadata"], **{"song-id": str(song_id), "kind": kind, "demo-id": demo})
+            s3.copy_object(Bucket=bucket, Key=new, CopySource={"Bucket": bucket, "Key": old},
+                           MetadataDirective="REPLACE", ContentType=CONTENT_TYPE, Metadata=tags)
+            after = head(s3, bucket, new)
+            if not after or after["ContentLength"] != before["ContentLength"] or after.get("Metadata", {}).get("sha256") != tags["sha256"]:
+                raise RuntimeError("the copy does not match the original")
+            return job, None
+        except Exception as error:  # noqa: BLE001 - reported; the old key stays in the DB
+            return job, f"{type(error).__name__}: {error}"
+
+    for start in range(0, len(todo), chunk):
+        jobs = [(*row, new_key(taken)) for row in todo[start:start + chunk]]
+        with ThreadPoolExecutor(8) as pool:
+            results = list(pool.map(copy, jobs))
+        good = [job for job, error in results if not error]
+        for job, error in results:
+            if error:
+                counts["failed"] += 1
+                print(f"  FAILED {job[4]}: {error}")
+        with conn:
+            for song_id, _, _, column, old, new in good:
+                conn.execute(f"UPDATE songs SET {column} = ? WHERE song_id = ? AND {column} = ?", (new, song_id, old))
+        counts["moved"] += len(good)
+        if good and not keep_old:
+            response = s3.delete_objects(Bucket=bucket, Delete={"Objects": [{"Key": job[4]} for job in good]})
+            errors = response.get("Errors", [])
+            for error in errors:
+                print("  NOT DELETED", error.get("Key"), error.get("Message"))
+            counts["old deleted"] += len(good) - len(errors)
+    return counts
 
 
 # ------------------------------------------------------------------ CLI
@@ -352,30 +424,43 @@ def cmd_apply(args) -> int:
         except Exception as error:  # noqa: BLE001 - one bad file must not stop the rest; it is reported below
             return item, "failed", f"{type(error).__name__}: {error}"
 
-    with ThreadPoolExecutor(args.workers) as pool:
-        results = list(pool.map(run, items))
-
-    counts = defaultdict(int)
-    for item, status, error in results:
-        counts[status] += 1
-        if error:
-            print(f"  FAILED {item.key} ({item.folder['song']}): {error}")
-    print(dict(counts))
-    if args.dry_run:
-        return 1 if counts["failed"] or problems else 0
-
-    # Keys are written only for objects that were verified in the bucket just now (or already matched).
-    ok = [i for i, status, _ in results if status in ("uploaded", "unchanged")]
-    changes = [i for i in ok if getattr(i.song, KINDS[i.kind].column) != i.key]
-    if changes:
-        backup = sqlite3.connect(f"{db_path()}.pre-pdfsync-{datetime.now():%Y%m%d-%H%M%S}.bak")
-        conn.backup(backup)  # consistent copy; one per run, so an earlier backup is never overwritten
-        backup.close()
+    # Keys go into the DB after every chunk, not at the end: if the run dies, what was already uploaded is
+    # referenced (a lost key would mean a new random key next time and an orphaned object).
+    counts, written, backed_up = defaultdict(int), 0, False
+    for start in range(0, len(items), CHUNK):
+        with ThreadPoolExecutor(args.workers) as pool:
+            results = list(pool.map(run, items[start:start + CHUNK]))
+        for item, status, error in results:
+            counts[status] += 1
+            if error:
+                print(f"  FAILED {item.key} ({item.folder['song']}): {error}")
+        if args.dry_run:
+            continue
+        # Only objects that were verified in the bucket just now (or already matched) get a key.
+        ok = [i for i, status, _ in results if status in ("uploaded", "unchanged")]
+        changes = [i for i in ok if getattr(i.song, KINDS[i.kind].column) != i.key]
+        if changes and not backed_up:
+            backup_db(conn)
+            backed_up = True
         with conn:
             for item in changes:
                 conn.execute(f"UPDATE songs SET {KINDS[item.kind].column} = ? WHERE song_id = ?", (item.key, item.song.song_id))
-    print(f"DB keys written: {len(changes)}")
+        written += len(changes)
+    print(dict(counts))
+    if not args.dry_run:
+        print(f"DB keys written: {written}")
     return 1 if counts["failed"] or problems else 0
+
+
+def cmd_rekey(args) -> int:
+    import storage
+
+    if not db_path().exists():
+        sys.exit(f"{db_path()} does not exist (DATABASE_PATH?)")
+    conn = sqlite3.connect(db_path())
+    counts = rekey(storage.client(), storage.bucket(), conn, keep_old=args.keep_old, dry_run=args.dry_run)
+    print(counts)
+    return 1 if counts["failed"] else 0
 
 
 def cmd_verify(args) -> int:
@@ -439,11 +524,14 @@ def main(argv: list[str]) -> int:
     apply.add_argument("--workers", type=int, default=8, choices=range(1, 33), metavar="1-32")
     check = sub.add_parser("verify")
     check.add_argument("--deep", action="store_true", help="HEAD every object and check its metadata")
+    move = sub.add_parser("rekey")
+    move.add_argument("--dry-run", action="store_true", help="only count what would move")
+    move.add_argument("--keep-old", action="store_true", help="do not delete the old objects afterwards")
     prune = sub.add_parser("prune")
     prune.add_argument("--yes", action="store_true")
     prune.add_argument("--force", action="store_true", help="allow deleting more than 10%% of the bucket")
     args = parser.parse_args(argv)
-    return {"plan": cmd_plan, "report": cmd_report, "apply": cmd_apply, "verify": cmd_verify, "prune": cmd_prune}[args.command](args)
+    return {"plan": cmd_plan, "report": cmd_report, "apply": cmd_apply, "verify": cmd_verify, "rekey": cmd_rekey, "prune": cmd_prune}[args.command](args)
 
 
 if __name__ == "__main__":
