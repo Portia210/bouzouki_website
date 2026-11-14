@@ -10,8 +10,8 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
 - Changed: schema v4 (`songs.score_key/tab_key`, empty), `/admin` password login (ENV `ADMIN_PASSWORD`, 7-day session renewed only by `/admin/session` and `/pdf`), `/pdf/<song_id>/<sheet|tab>` → 5-min R2 presigned URL, `storage.py` (boto3), lock/document buttons in the player, search results now close after a same-page click. Plan: `.claude/plans/pdf-upload.md`.
 - Settled with the developer: private bucket `bouzouki-rebetiko` (no public URL, no custom domain), push to `master` freely, DB edited locally then committed. Folders and DB artists match 79/79.
 - Verified: 65 tests; in headless Chrome on a scratch DB with fake keys: lock → `/admin` → back to the song → document icon; search fix; no R2 configured → generic 503. Code review (security skill) done and its findings fixed.
-- NOT verified: any real R2 access (no keys yet) and that R2 honours `response-content-disposition` on presigned URLs; behaviour on Railway.
-- Next: P1 `scripts/pdf_sync.py` (plan/apply/verify). Developer first creates an R2 token limited to the bucket and sets `R2_*` + `ADMIN_PASSWORD` in `.env` (and later on Railway; `TRUST_PROXY_HOPS=1` is already set there).
+- R2 verified live (bucket-scoped token in local `.env`): list/put/head/delete, a presigned GET returns `application/pdf` with the `inline; filename=…` disposition we ask for, an unsigned GET is refused (400). NOT verified: behaviour on Railway (variables not set there yet); `ADMIN_PASSWORD` is not in the local `.env` yet.
+- Next: P1 `scripts/pdf_sync.py` (plan/apply/verify). Local `.env` has the `R2_*` variables; the developer still adds `ADMIN_PASSWORD` (later also both sets on Railway; `TRUST_PROXY_HOPS=1` is already set there).
 
 ## 2026-11-14 — Railway: region and edge cache (speed)
 - Changed (in Railway, not in git): service `web` moved from us-west2 to `europe-west4-drams3a` (Amsterdam), edge CDN enabled (`htmlCaching auto`, purge all on deploy). Cause of the slowness was distance (~0.45 s per request), not image size (thumbnails ~12 KB).
