@@ -55,6 +55,7 @@ tmp/
 temp/
 *.tmp
 *.bak
+/manifest.json
 
 # ---- Node / JS / TS ---------------------------------------------------
 node_modules/

@@ -36,6 +36,7 @@ Slugs: `textkeys.make_slug` (≤3 significant words, ≤26 chars), duplicates ge
 | `app.py` | `create_app`: routes, CSP/security headers, rate limits, error handlers |
 | `classes.py` | `Artist`, `Song`, `Catalog`, `load_catalog`, `load_artist_image` |
 | `storage.py` | R2 client (boto3, lazy import), `presigned_url`, `content_disposition` |
+| `pdf_sync.py` | CLI `plan / apply / verify / prune`: Patreon folders → R2 + `songs.*_key`; logic and how to add mp3/mid/sib in `scripts/pdf_audit/UPLOAD_LOGIC.md` |
 | `textkeys.py` | `phonetic_key` (Greek/Latin spelling → one key), `make_slug` |
 | `search.py` | `SearchIndex`: word/prefix/substring scoring, typo fallback (difflib) |
 | `db_migrate.py`, `migrations/` | Versioned, reversible schema changes |
@@ -70,4 +71,4 @@ screenshots were used; no browser test suite).
 Project `bouzouki-website` id `75ef6876-6dc5-40e0-9f00-445cc86137b1`, environment `production` `0b99f4ed-88e8-4c03-8ce9-12bbd6b7a466`, service `web` `6f318ef4-dd9c-4b20-939e-41cbc31b6e74`. Builder RAILPACK, start `gunicorn app:app --bind 0.0.0.0:$PORT --workers 2`, health `/healthz`, region `europe-west4-drams3a`, edge CDN on. Variables: `FLASK_SECRET_KEY`, `TRUST_PROXY_HOPS=1`. Settings live in Railway, not in git (`railway.json`/`Procfile` mirror them). Every push to `master` redeploys; expect a short "Application not found" while it swaps.
 
 ## Sheet-music PDFs on Cloudflare R2
-Built: schema, admin sign-in, `/pdf`, buttons (lock until signed in; `artist.js` asks `/admin/session`, so the cached HTML is identical for everyone). Not built: `scripts/pdf_sync.py` (upload/verify) and the real upload — plan and decisions in `.claude/plans/pdf-upload.md`.
+Built: schema, admin sign-in, `/pdf`, buttons (lock until signed in; `artist.js` asks `/admin/session`, so the cached HTML is identical for everyone), `pdf_sync.py` (tested against a fake S3). Not done: the real upload (needs D: mounted in WSL) — plan in `.claude/plans/pdf-upload.md`.

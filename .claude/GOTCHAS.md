@@ -22,6 +22,7 @@ being true.
 | Public pages must never get a `Set-Cookie` | The Railway edge cache could store the admin's cookie and hand it to visitors | `SESSION_REFRESH_EACH_REQUEST=False`; only `/admin*` and `/pdf*` (no-store) touch the session. `test_signed_in_admin_gets_no_cookie…` guards it |
 | Login rate limit uses the client IP | Without `TRUST_PROXY_HOPS=1` on Railway everyone shares the proxy IP (5 wrong tries/min lock the admin out) | Keep `TRUST_PROXY_HOPS=1`; counters are per gunicorn worker (2), so the real limit is 10/min |
 | `ADMIN_PASSWORD` changes sign everyone out | Intended: the session stores an HMAC of the password | Rotate the password to revoke sessions |
+| `pdf_sync.py prune --yes` judges orphans by the local DB only | A DB without the keys (wrong `DATABASE_PATH`, old checkout, restored `.bak`) makes every object an orphan | The script refuses when no key is referenced or >10% would go; still run `verify` first and never `--force` without looking |
 | Reopening the same URL with only a `#hash` in the browser doesn't reload | Stale HTML while testing | `location.reload()` |
 
 ## Known gaps

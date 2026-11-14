@@ -21,9 +21,9 @@ Per folder: `<song> video link.txt` (YouTube `demo_id`), `<song> - <artist>.pdf`
 ## Steps
 - [x] 1. Migration 0004 + `classes.py` (`score_key`, `tab_key`, `song_by_id`) — round trip proven on a copy of the real DB.
 - [x] 2. `/admin`, session, `/pdf`, `storage.py`, buttons + lock, `tests/test_admin.py` — verified in a browser on a scratch DB with fake keys.
-- [ ] 3. `scripts/pdf_sync.py` `plan` / `apply` / `verify`: match folders (rule above; anything unmatched goes to a report, never guessed), classify tab by `ΤΑΜΠΛΑΤΟΥΡΑ`, base file `<song> - <artist>.pdf` when several (D2), upload only missing/changed (sha256), HEAD-verify, then write keys. Tests with fake folders and a fake S3.
+- [x] 3. `pdf_sync.py` (repo root, like `db_migrate.py`) `plan` / `apply` / `verify` / `prune`, tested against a fake S3. `plan` on the real manifest: 1048/1048 folders matched, 986 sheets + 986 tabs, 2 names-only NOTEs, 208 picks to eyeball. Rules: `scripts/pdf_audit/UPLOAD_LOGIC.md`.
 - [x] 4a. Bucket-scoped R2 token (Object Read & Write) created; `R2_*` in the local `.env`; round trip incl. presigned GET and refused anonymous GET verified.
-- [ ] 4b. Developer adds `ADMIN_PASSWORD` to `.env`; run `plan`, then `apply`, then `verify`.
+- [ ] 4b. Developer: `sudo mount -t drvfs D: /mnt/d`, adds `ADMIN_PASSWORD` to `.env`; then `apply --dry-run`, `apply`, `verify --deep` (commands in UPLOAD_LOGIC.md).
 - [ ] 5. Set the same variables on Railway, commit + push the DB, check a PDF on the live site (R2 honouring `response-content-disposition` is already verified).
 
 ## Open

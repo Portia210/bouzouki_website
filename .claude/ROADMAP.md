@@ -25,10 +25,10 @@ Settled 2026-11-14: bucket is private (D1), no custom domain (D4), PDFs only for
 
 ## Part P — Sheet-music PDFs on R2 (plan: `.claude/plans/pdf-upload.md`)
 
-- [ ] **P1** — `scripts/pdf_sync.py` (plan / apply / verify) and the real upload
-  - Goal: map the 1048 song folders to `song_id`s and upload their PDFs idempotently; write keys only for verified objects.
-  - Done when: `plan` shows 0 unmatched songs; `verify` reports 0 missing and 0 orphans.
-  - Depends on: R2 token in the developer's `.env`.
+- [ ] **P1** — Run the real upload (`pdf_sync.py` is written and tested)
+  - Goal: upload the 1972 picked PDFs and write their keys to the local DB.
+  - Done when: `apply` has no failures; `verify --deep` reports 0 missing and 0 orphans.
+  - Depends on: D: mounted in WSL (`sudo mount -t drvfs D: /mnt/d`).
 - [ ] **P2** — Go live
   - Goal: R2 + `ADMIN_PASSWORD` variables on Railway, DB with keys pushed.
   - Done when: the admin opens five random PDFs on the live site; visitors see locks.
