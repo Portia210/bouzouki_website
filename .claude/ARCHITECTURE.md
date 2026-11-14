@@ -35,7 +35,7 @@ Slugs: `textkeys.make_slug` (≤3 significant words, ≤26 chars), duplicates ge
 | `textkeys.py` | `phonetic_key` (Greek/Latin spelling → one key), `make_slug` |
 | `search.py` | `SearchIndex`: word/prefix/substring scoring, typo fallback (difflib) |
 | `db_migrate.py`, `migrations/` | Versioned, reversible schema changes |
-| `templates/`, `static/` | `static/fonts/` = Inter (OFL); `base.html` + `_macros.html`; `css/styles.css`; `js/search.js`, `artist.js`, `theme.js`; icons: `img/logo.svg` (hero bouzouki), `favicon.ico` + `img/favicon-32.png`, `icon-192/512.png`, `apple-touch-icon.png` (all the developer's guitar-pick photo, background removed), `site.webmanifest` |
+| `templates/`, `static/` | `static/fonts/` = Inter (OFL); `base.html` + `_macros.html`; `css/styles.css`; `js/search.js`, `artist.js`, `theme.js`; icons: `img/logo.svg` (hero bouzouki), `favicon.ico` + `img/favicon-32.png`, `icon-192/512.png`, `apple-touch-icon.png` (an orange guitar pick, shaped like the developer's photo, on a blue tile), `site.webmanifest` |
 | `tests/` | pytest suite (runs against the real catalog and temp legacy DBs) |
 | `crawling_scripts/`, `db_games.py`, `automation.py`, `images.ipynb`, `jsons/`, `artists.csv`, `images/` | Offline data collection (Selenium); not imported by the app. `images/` is git-ignored |
 

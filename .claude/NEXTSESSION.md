@@ -6,10 +6,10 @@ keeps them). Standing rules go in CLAUDE.md or GOTCHAS.md, not here.
 
 Entry template (copy it, keep the "NOT verified" line — write "nothing" if so):
 
-    ## 2026-11-14 — Favicon = the developer's pick photo
-- Changed: favicon.ico, favicon-32.png, icon-192/512, apple-touch-icon are the Greek guitar-pick photo the developer supplied, white background removed (Pillow flood-fill + soft edge). No SVG favicon any more. Shows the photo's "Mastro MEDIUM" print at larger sizes (192/512, og:image).
-- Verified: pytest (42); transparent cut-out on light and dark preview sheet.
-- NOT verified: how it looks in a real browser tab (tab icons are cached; hard refresh).
+    ## 2026-11-14 — Favicon = orange pick on a blue tile
+- Changed: favicon.ico, favicon-32.png, icon-192/512, apple-touch-icon = the silhouette of the developer's pick photo (outline traced from it, no "Mastro" print), flat amber #e0902f from the developer's colour sample, on a rounded Aegean-blue tile with a soft glow and shadow. Alternatives rendered but not kept: night-navy, pearl. No SVG favicon.
+- Verified: pytest (42); preview sheet on light and dark.
+- NOT verified: real browser tab (icons are cached; hard refresh).
 - Next: —
 
 ## YYYY-MM-DD — <task id>: <title>
