@@ -55,7 +55,7 @@ Env: `FLASK_SECRET_KEY`, `PORT`, `LOG_LEVEL`, `TRUST_PROXY_HOPS`, `DATABASE_PATH
 | Env | Branch | DB | Notes |
 |---|---|---|---|
 | local | — | `instance/music.db` (tracked) | `uv run python app.py` |
-| production | `master` (Railway planned, not connected) | same file, shipped with the code | `railway.json`: gunicorn `app:app`, health `/healthz`; set `TRUST_PROXY_HOPS=1` |
+| production | `master` auto-deploys to Railway | same file, shipped with the code | `railway.json`: gunicorn `app:app`, health `/healthz`; set `TRUST_PROXY_HOPS=1` |
 
 ## Verification commands
 `uv run pytest -q`. UI: run the app and check pages in a browser (headless Chrome

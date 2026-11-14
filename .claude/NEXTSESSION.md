@@ -6,7 +6,13 @@ keeps them). Standing rules go in CLAUDE.md or GOTCHAS.md, not here.
 
 Entry template (copy it, keep the "NOT verified" line — write "nothing" if so):
 
-    ## 2026-11-14 — Favicon = orange pick on a deep-blue tile
+    ## 2026-11-14 — Railway deploy fixed and live
+- Changed: the Railway project `bouzouki-website` (service `web`, repo `Portia210/bouzouki_website`, branch master, auto-deploy on push) already existed but every deploy failed (Nixpacks `pip install uv==` bug; start command `python app.py` ran without the venv → `No module named 'dotenv'`). Service settings changed in Railway: builder RAILPACK, start `gunicorn app:app --bind 0.0.0.0:$PORT --workers 2`, healthcheck `/healthz`, restart ON_FAILURE, variable `TRUST_PROXY_HOPS=1` (`FLASK_SECRET_KEY` was already set).
+- Verified: deployment SUCCESS; live https://web-production-0f750.up.railway.app — pages, search, images (WebP), favicon, sitemap, CSP/HSTS headers, 404 all OK.
+- NOT verified: YouTube embeds on the live domain in a real browser; page speed from Israel (service runs in us-west2, ~0.5 s per request from here); no gzip on responses.
+- Next: decide on a custom domain and whether to move the service to a European region.
+
+## 2026-11-14 — Favicon = orange pick on a deep-blue tile
 - Changed: favicon.ico, favicon-32.png, icon-192/512, apple-touch-icon = silhouette traced from the developer's pick photo, flat amber #e0902f (their colour sample), on a rounded deep-blue tile (`deepblue`, darker than the earlier `blue`). Everything about it is kept in `design/favicon/` (originals, earlier attempts, comparison sheets, `make_icons.py` with variants deepblue|pearl|blue|black|night).
 - Verified: pytest (42); preview sheets on light and dark.
 - NOT verified: real browser tab (icons are cached; hard refresh).
