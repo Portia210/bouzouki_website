@@ -13,6 +13,12 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
     - Traps / decisions: <what the next session must know>
     - Next: <what's owed, open questions for the developer>
 
+## 2026-11-14 — Header, favicon emblem, quiet dev log, "unavailable" videos
+- Changed: site name **Bouzouki Rebetico** everywhere (spelling as requested; hero copy still says "Rebetiko"); header is one big line, no icon; favicon/PNG/ICO = body-only bouzouki emblem (`static/img/favicon.svg`; hero keeps the full tilted `logo.svg`); `main.py` dev log shows pages and errors only, gunicorn access log removed.
+- Verified: pytest (39); screenshots desktop/mobile; dev log content; embeds that say "unavailable" on http://localhost DO play from an https origin.
+- NOT verified: videos on the real Railway https domain; browser tabs showing the new favicon (cache).
+- Next: after the Railway deploy, confirm the embeds play there.
+
 ## 2026-11-14 — Icon, artist-page layout, songs open in the artist page
 - Changed: Greek-bouzouki logo/favicon set (SVG source `static/img/logo.svg`; ICO/PNGs rendered from it with headless Chrome); no song pages any more — `/song/<slug>` and search results go to `/artist/<slug>#<song>`, Enter opens the best match; artist page list scrolls with the page, player panel sticky (phone: player above the list); "Open on YouTube" link per player.
 - Verified: pytest (39), headless-Chrome screenshots + DOM checks (hash select, search → hash, header position).

@@ -1,7 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b6cf0"/><stop offset="1" stop-color="#1a3aa8"/></linearGradient></defs>
-  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
-  <g transform="translate(32 32) rotate(32) scale(.27) translate(-50 -196)">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-22 158 144 144">
+  
 <defs>
   <linearGradient id="amber" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6ad45"/><stop offset="1" stop-color="#c56c14"/></linearGradient>
   <linearGradient id="neck" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#241a13"/><stop offset=".5" stop-color="#3a2a1d"/><stop offset="1" stop-color="#241a13"/></linearGradient>
@@ -37,5 +35,4 @@
   <path d="M50 166C62 166 66 190 80 212C94 232 100 252 91 273C83 291 65 300 50 300C35 300 17 291 9 273C0 252 6 232 20 212C34 190 38 166 50 166Z" transform="translate(50 233) scale(.94) translate(-50 -233)" fill="none" stroke="#e9b24a" stroke-width=".9"/>
   <rect x="35" y="283" width="30" height="7" rx="3.5" fill="#c9c1ae" stroke="#7d7566" stroke-width=".8"/>
   <g stroke="#f3ead2" stroke-width=".55" opacity=".85"><path d="M45.2 44L38.5 286"/><path d="M47 44L40 286"/><path d="M48.8 44L42.5 286"/><path d="M50.5 44L45.5 286"/><path d="M49.5 44L54.5 286"/><path d="M51.2 44L57.5 286"/><path d="M53 44L60 286"/><path d="M54.8 44L61.5 286"/></g>
-  </g>
 </svg>

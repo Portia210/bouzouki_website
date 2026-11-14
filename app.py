@@ -190,7 +190,7 @@ def create_app(db_file: str | Path | None = None, secret_key: str | None = None)
 
     @app.errorhandler(404)
     def not_found(error):
-        logger.info(f"404 {request.path}")
+        logger.debug(f"404 {request.path}")
         return _error(404, "Page Not Found")
 
     @app.errorhandler(429)

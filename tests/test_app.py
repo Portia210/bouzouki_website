@@ -99,7 +99,7 @@ def test_favicon_and_manifest(client):
     assert client.get("/static/img/favicon.svg").status_code == 200
     assert client.get("/static/img/apple-touch-icon.png").mimetype == "image/png"
     manifest = client.get("/static/site.webmanifest").get_json(force=True)
-    assert manifest["name"] == "Rebetiko Music"
+    assert manifest["name"] == "Bouzouki Rebetico"
     for icon in manifest["icons"]:
         assert client.get(icon["src"]).status_code == 200
     html = client.get("/").get_data(as_text=True)

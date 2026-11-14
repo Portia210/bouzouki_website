@@ -22,7 +22,7 @@
         byId("player-original-link").href = watch + row.dataset.original;
         byId("player-lesson-link").href = watch + row.dataset.lesson;
         byId("player-more").href = "https://www.youtube.com/results?search_query=" + encodeURIComponent(row.dataset.query);
-        document.title = row.dataset.title + " — " + list.dataset.artistName + " — Rebetiko Music";
+        document.title = row.dataset.title + " — " + list.dataset.artistName + " — Bouzouki Rebetico";
     }
 
     function fromHash() {
