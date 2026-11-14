@@ -1,9 +1,9 @@
 """Builds the site icons from the supplied pick photo.
 
-    uv run python design/favicon/make_icons.py pearl    # apply: writes static/favicon.ico + static/img/*.png
+    uv run python design/favicon/make_icons.py deepblue    # apply: writes static/favicon.ico + static/img/*.png
     uv run python design/favicon/make_icons.py sheet    # preview sheet -> design/favicon/sheets/
 
-Variants (tile background): pearl (current), black, blue, night. Needs Pillow (dev dependency).
+Variants (tile background): pearl, deepblue (current), blue, black, night. Needs Pillow (dev dependency).
 The pick outline is cut from originals/pick-photo.png; the colour is the amber in originals/color-sample-amber.png.
 """
 import io, struct, sys
@@ -57,6 +57,7 @@ def glow(color, center, radius, alpha):
 
 VARIANTS = {
     "blue":  dict(grad=((60, 110, 245), (20, 44, 140)), glows=[((120, 170, 255), (300, 220), 420, 150)]),
+    "deepblue": dict(grad=((33, 68, 188), (7, 16, 66)), glows=[((90, 140, 240), (300, 220), 400, 105)]),
     "night": dict(grad=((30, 40, 82), (9, 13, 30)), glows=[((255, 170, 60), (BIG // 2, BIG // 2 + 40), 420, 120)]),
     "black": dict(grad=((34, 34, 40), (3, 3, 5)), glows=[((255, 170, 60), (BIG // 2, BIG // 2 + 30), 400, 85)], ring=True),
     "pearl": dict(grad=((250, 246, 236), (222, 210, 186)), glows=[((255, 255, 255), (300, 240), 380, 190)]),
@@ -91,7 +92,7 @@ if __name__ == "__main__":
     mode = sys.argv[1]
     if mode == "sheet":
         sheet = Image.new("RGBA", (1140, 250), "white"); sheet.paste(Image.new("RGBA", (570, 250), (32, 33, 36, 255)), (570, 0))
-        for i, name in enumerate(("pearl", "black", "blue")):
+        for i, name in enumerate(("deepblue", "blue", "pearl")):
             x = 10 + i * 190
             sheet.alpha_composite(out(name, 128), (x, 15)); sheet.alpha_composite(out(name, 128), (x + 570, 15))
             for j, n in enumerate((48, 32, 16)):

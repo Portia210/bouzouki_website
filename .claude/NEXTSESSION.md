@@ -6,8 +6,8 @@ keeps them). Standing rules go in CLAUDE.md or GOTCHAS.md, not here.
 
 Entry template (copy it, keep the "NOT verified" line — write "nothing" if so):
 
-    ## 2026-11-14 — Favicon = orange pick on a pearl tile
-- Changed: favicon.ico, favicon-32.png, icon-192/512, apple-touch-icon = silhouette traced from the developer's pick photo, flat amber #e0902f (their colour sample), on a pearl/cream rounded tile. Everything about it is kept in `design/favicon/` (originals, earlier attempts, comparison sheets, `make_icons.py` with variants pearl|black|blue|night).
+    ## 2026-11-14 — Favicon = orange pick on a deep-blue tile
+- Changed: favicon.ico, favicon-32.png, icon-192/512, apple-touch-icon = silhouette traced from the developer's pick photo, flat amber #e0902f (their colour sample), on a rounded deep-blue tile (`deepblue`, darker than the earlier `blue`). Everything about it is kept in `design/favicon/` (originals, earlier attempts, comparison sheets, `make_icons.py` with variants deepblue|pearl|blue|black|night).
 - Verified: pytest (42); preview sheets on light and dark.
 - NOT verified: real browser tab (icons are cached; hard refresh).
 - Next: —
