@@ -13,6 +13,9 @@ def test_pages_render(client, catalog):
     assert f"embed/{song.video_id}" in html and f"embed/{song.demo_id}" in html
     assert f"watch?v={song.video_id}" in html  # plain YouTube link for videos that refuse embedding
     assert f'data-slug="{song.slug}"' in html
+    # phone UX hooks used by artist.js: list first, player re-homed under the tapped song
+    assert 'id="player-home"' in html and 'id="player-close"' in html
+    assert html.index('id="song-list"') < html.index('id="player-panel"')
 
 
 def test_song_url_redirects_to_artist_page_opened_on_that_song(client, catalog):

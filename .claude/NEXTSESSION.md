@@ -17,6 +17,7 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
 - Changed: site name **Bouzouki Rebetico** everywhere (spelling as requested; hero copy still says "Rebetiko"); header is one big line, no icon; favicon/PNG/ICO = body-only bouzouki emblem (`static/img/favicon.svg`; hero keeps the full tilted `logo.svg`); `main.py` dev log shows pages and errors only, gunicorn access log removed.
 - Verified: pytest (39); screenshots desktop/mobile; dev log content; embeds that say "unavailable" on http://localhost DO play from an https origin.
 - NOT verified: videos on the real Railway https domain; browser tabs showing the new favicon (cache).
+- Also: `cryptography` (dev dep) + `main.py --https`; verified the previously "unavailable" original plays on https://localhost. Phone artist page: list first, player opens under the tapped song (tap again/Close folds it, stops playback); desktop unchanged.
 - Next: after the Railway deploy, confirm the embeds play there.
 
 ## 2026-11-14 — Icon, artist-page layout, songs open in the artist page

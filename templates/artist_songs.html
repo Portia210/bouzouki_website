@@ -20,11 +20,12 @@
 
 <div class="container-xxl py-3 py-md-4">
     <div class="row g-4">
-        <div class="col-md-5 col-lg-4 order-2 order-md-1">
+        <div class="col-md-5 col-lg-4">
             {% if artist.number_of_songs > 8 %}
             <input type="search" id="song-filter" class="form-control mb-3" placeholder="Filter {{ artist.number_of_songs }} songs…"
                 aria-label="Filter songs by {{ artist.en_name }}" data-artist="{{ artist.slug }}" maxlength="100">
             {% endif %}
+            <p class="list-hint d-md-none">Tap a song to open its videos right below it.</p>
             <ul class="song-list" id="song-list" data-artist-name="{{ artist.en_name }}">
                 {% for song in artist.songs %}
                 <li data-slug="{{ song.slug }}">
@@ -41,10 +42,15 @@
             <p class="empty-note" id="filter-empty" hidden>No songs match. Spelling doesn't have to be exact — try fewer letters.</p>
         </div>
 
-        <aside class="col-md-7 col-lg-8 order-1 order-md-2">
+        <aside class="col-md-7 col-lg-8" id="player-home">
             <div class="player-panel" id="player-panel">
-                <h2 class="player-title" id="player-title">{{ first.en_name }}</h2>
-                <p class="greek-name player-title-gr" id="player-title-gr">{{ first.gr_name }}</p>
+                <div class="player-top">
+                    <div>
+                        <h2 class="player-title" id="player-title">{{ first.en_name }}</h2>
+                        <p class="greek-name player-title-gr" id="player-title-gr">{{ first.gr_name }}</p>
+                    </div>
+                    <button type="button" class="btn btn-sm player-close d-md-none" id="player-close" aria-label="Close the videos">Close ✕</button>
+                </div>
                 {{ player('Original recording', first.video_id, 'Original recording', 'player-original', 'player-original-link') }}
                 {{ player('Sheet-music lesson', first.demo_id, 'Bouzouki sheet-music lesson', 'player-lesson', 'player-lesson-link') }}
                 <p class="player-more"><a id="player-more" target="_blank" rel="noopener"

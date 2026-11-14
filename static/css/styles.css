@@ -215,6 +215,8 @@ a { text-underline-offset: 3px; }
 .song-go { color: var(--muted); }
 .song-row:hover .song-go { color: var(--accent); }
 .empty-note { color: var(--muted); }
+.list-hint { color: var(--muted); font-size: .9rem; margin: 0 0 .6rem; }
+.song-row { scroll-margin-top: 8.5rem; }
 #song-filter { border-radius: 999px; padding: .65rem 1.1rem; }
 
 /* ---- players ------------------------------------------------------------ */
@@ -227,6 +229,9 @@ a { text-underline-offset: 3px; }
         max-height: calc(100vh - 6.5rem); overflow-y: auto; /* never let the bottom of a tall panel be unreachable */
     }
 }
+.player-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
+.player-close { flex: none; border: 1px solid var(--line); color: var(--muted); background: var(--bg); }
+.song-list li > .player-panel { margin: .5rem 0 .75rem; }
 .player-title { font-size: 1.3rem; font-weight: 700; margin: 0; }
 .player-title-gr { font-size: 1rem; margin: 0 0 .75rem; }
 .player-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 1rem 0 .5rem; }

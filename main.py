@@ -1,4 +1,5 @@
 """Local development server with auto-reload: `uv run python main.py`.
+Add `--https` for a self-signed https server (YouTube refuses some embeds on plain http).
 
 Restarts on Python changes and re-reads templates on every request. Never use this on
 Railway — production runs gunicorn (see Procfile).
@@ -7,6 +8,7 @@ Railway — production runs gunicorn (see Procfile).
 import logging
 import os
 import re
+import sys
 
 os.environ.setdefault("LOG_LEVEL", "WARNING")  # dev console: problems only (set LOG_LEVEL=INFO for more)
 
@@ -32,7 +34,9 @@ logging.getLogger("werkzeug").addFilter(_PagesOnly())
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
+    https = "--https" in sys.argv
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":  # the reloader child; print once, not twice
-        print(f"Bouzouki Rebetico dev server: http://localhost:{port}  (auto-reload on, Ctrl+C to stop)", flush=True)
+        note = "  (self-signed: accept the browser warning)" if https else ""
+        print(f"Bouzouki Rebetico dev server: {'https' if https else 'http'}://localhost:{port}{note}  (auto-reload on, Ctrl+C to stop)", flush=True)
     # Localhost only, and no in-browser debugger (it would allow code execution from the page).
-    app.run(host="127.0.0.1", port=port, debug=True, use_debugger=False)
+    app.run(host="127.0.0.1", port=port, debug=True, use_debugger=False, ssl_context="adhoc" if https else None)

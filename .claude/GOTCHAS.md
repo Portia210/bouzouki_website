@@ -13,7 +13,7 @@ being true.
 | CSP forbids inline `<script>` and `style=` | New inline code silently does nothing | Put JS in `static/js/`, styling in `styles.css` (`test_no_inline_script_or_style_in_pages`) |
 | `.gitignore` contains `*.db` | A new `.db` file is ignored | `!instance/music.db` keeps the main DB tracked; use `git add -f` for others |
 | `pkill -f <text>` in a Bash tool call matches the call itself | Shell exits 144 | Kill by port: `fuser -k 5055/tcp` |
-| Some YouTube embeds say "This video is unavailable" on `http://localhost` / `127.0.0.1` | Same videos play from an https origin (verified with a self-signed https test page, nocookie and youtube.com hosts alike); oEmbed/watch metadata say they are fine | Not a code bug — expected to work on Railway (https). Locally use the "Open on YouTube ↗" link |
+| Some YouTube embeds say "This video is unavailable" on `http://localhost` / `127.0.0.1` | Same videos play from an https origin (verified with a self-signed https test page, nocookie and youtube.com hosts alike); oEmbed/watch metadata say they are fine | Not a code bug — expected to work on Railway (https). Locally run `uv run python main.py --https` (accept the self-signed warning) or use "Open on YouTube ↗" |
 | `app.py` / gunicorn don't reload; templates are cached | Edited templates don't show, or a half-updated server returns 500 | Develop with `uv run python main.py` (debug + reloader); `main.py` is never for production |
 | Migrations rebuild tables | DB file doubles in size | `db_migrate.py` runs `VACUUM` afterwards |
 

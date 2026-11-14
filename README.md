@@ -10,6 +10,7 @@ the Latin transliteration (`mou` / `moy` / `μου`).
 uv sync
 cp .env.example .env        # then set FLASK_SECRET_KEY
 uv run python main.py       # http://localhost:5000, auto-reloads on edits
+uv run python main.py --https   # self-signed https; use it to check YouTube embeds
 uv run pytest -q            # tests
 ```
 
