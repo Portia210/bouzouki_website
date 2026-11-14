@@ -6,7 +6,13 @@ keeps them). Standing rules go in CLAUDE.md or GOTCHAS.md, not here.
 
 Entry template (copy it, keep the "NOT verified" line — write "nothing" if so):
 
-    ## YYYY-MM-DD — <task id>: <title>
+    ## 2026-11-14 — Favicon = the developer's pick photo
+- Changed: favicon.ico, favicon-32.png, icon-192/512, apple-touch-icon are the Greek guitar-pick photo the developer supplied, white background removed (Pillow flood-fill + soft edge). No SVG favicon any more. Shows the photo's "Mastro MEDIUM" print at larger sizes (192/512, og:image).
+- Verified: pytest (42); transparent cut-out on light and dark preview sheet.
+- NOT verified: how it looks in a real browser tab (tab icons are cached; hard refresh).
+- Next: —
+
+## YYYY-MM-DD — <task id>: <title>
     - Changed: <what, a line or two>
     - Verified: <gate, tests, click-through, migration round trip>
     - NOT verified: <what and why>
@@ -14,7 +20,7 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
     - Next: <what's owed, open questions for the developer>
 
 ## 2026-11-14 — Header, favicon emblem, quiet dev log, "unavailable" videos
-- Changed: site name **Bouzouki Rebetico** everywhere (spelling as requested; hero copy still says "Rebetiko"); header is one big line, no icon; favicon/PNG/ICO = body-only bouzouki emblem (`static/img/favicon.svg`; hero keeps the full tilted `logo.svg`); `main.py` dev log shows pages and errors only, gunicorn access log removed.
+- Changed: site name **Bouzouki Rebetico** everywhere (spelling as requested; hero copy still says "Rebetiko"); header is one big line, no icon; favicon set (now the pick photo, see top entry; hero keeps `logo.svg`); `main.py` dev log shows pages and errors only, gunicorn access log removed.
 - Verified: pytest (39); screenshots desktop/mobile; dev log content; embeds that say "unavailable" on http://localhost DO play from an https origin.
 - NOT verified: videos on the real Railway https domain; browser tabs showing the new favicon (cache).
 - Also: `cryptography` (dev dep) + `main.py --https`; verified the previously "unavailable" original plays on https://localhost. Phone artist page: list first, player opens under the tapped song (tap again/Close folds it, stops playback); desktop unchanged.
@@ -26,7 +32,7 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
 - Changed: Greek-bouzouki logo/favicon set (SVG source `static/img/logo.svg`; ICO/PNGs rendered from it with headless Chrome); no song pages any more — `/song/<slug>` and search results go to `/artist/<slug>#<song>`, Enter opens the best match; artist page list scrolls with the page, player panel sticky (phone: player above the list); "Open on YouTube" link per player.
 - Verified: pytest (39), headless-Chrome screenshots + DOM checks (hash select, search → hash, header position).
 - NOT verified: the reported home-page 500 — not reproducible; most likely the dev server briefly ran new templates with old `app.py` while I was editing (restart the server). Real devices/Safari; why some videos say "unavailable" for the developer (likely region).
-- Also: new ornate bouzouki logo (`logo.svg` upright, `favicon.svg`/PNG/ICO cropped tile), hero illustration, artist cards ~320px, larger sticky player (cols 4/8, capped to viewport).
+- Also: new ornate bouzouki logo (`logo.svg` upright, favicon set), hero illustration, artist cards ~320px, larger sticky player (cols 4/8, capped to viewport).
 - Next: if the 500 comes back, send the traceback.
 
 ## 2026-11-14 — Search, DB, redesign, Railway prep

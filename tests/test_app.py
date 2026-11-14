@@ -101,14 +101,14 @@ def test_healthz_robots_sitemap(client, catalog):
 def test_favicon_and_manifest(client):
     ico = client.get("/favicon.ico")
     assert ico.status_code == 200 and ico.data[:4] == b"\x00\x00\x01\x00"
-    assert client.get("/static/img/favicon.svg").status_code == 200
+    assert client.get("/static/img/favicon-32.png").mimetype == "image/png"
     assert client.get("/static/img/apple-touch-icon.png").mimetype == "image/png"
     manifest = client.get("/static/site.webmanifest").get_json(force=True)
     assert manifest["name"] == "Bouzouki Rebetico"
     for icon in manifest["icons"]:
         assert client.get(icon["src"]).status_code == 200
     html = client.get("/").get_data(as_text=True)
-    for needle in ("favicon.svg", "/favicon.ico", "apple-touch-icon.png", "site.webmanifest"):
+    for needle in ("favicon-32.png", "/favicon.ico", "apple-touch-icon.png", "site.webmanifest"):
         assert needle in html
 
 
