@@ -146,7 +146,7 @@
     pdfButtons.forEach(function (pair) {
         if (!pair[0]) return;
         pair[0].addEventListener("click", function (e) {
-            if (!isAdmin || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;  // locked: go to sign-in; modifier: new tab
+            if (!isAdmin || !wide.matches || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;  // locked: sign-in; phone: new tab; modifier: new tab
             e.preventDefault();
             if (viewing === pair[1]) { showTab(current()); return; }  // pressing the open one closes it
             openPdf(pair[1]);
@@ -162,7 +162,11 @@
             if (!url) return;
             any = true;
             link.href = isAdmin ? url : "/admin?next=" + encodeURIComponent(location.pathname + "#" + row.dataset.slug);
-            link.title = isAdmin ? "Show here (Ctrl/Cmd-click: new tab)" : "Sign in to open";
+            // Phones show PDFs badly inside a page, so there the button simply opens a new tab.
+            var inPage = isAdmin && wide.matches;
+            if (inPage || !isAdmin) link.removeAttribute("target"); else link.target = "_blank";
+            link.rel = "noopener";
+            link.title = !isAdmin ? "Sign in to open" : inPage ? "Show here (Ctrl/Cmd-click: new tab)" : "Opens in a new tab";
         });
         pdfBox.hidden = !any;
         panel.dataset.admin = String(isAdmin);
