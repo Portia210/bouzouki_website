@@ -14,7 +14,7 @@ def test_pages_render(client, catalog):
     assert f'data-original="{song.video_id}"' in html and f'data-lesson="{song.demo_id}"' in html
     assert f'data-slug="{song.slug}"' in html
     # phone UX hooks used by artist.js: list first, player re-homed under the tapped song
-    assert 'id="player-home"' in html and 'id="player-close"' in html
+    assert 'id="player-home"' in html and 'id="player-share"' in html and 'id="player-close"' not in html
     assert html.index('id="song-list"') < html.index('id="player-panel"')
 
 

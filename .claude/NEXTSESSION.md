@@ -6,6 +6,12 @@ keeps them). Standing rules go in CLAUDE.md or GOTCHAS.md, not here.
 
 Entry template (copy it, keep the "NOT verified" line — write "nothing" if so):
 
+## 2026-11-17 — Share button in the player (replaces the phone-only Close button)
+- Changed: `#player-share` in the player header (all screens). Link = `location.origin + pathname + #song-slug` (the hash `artist.js` already opens). Phones with `navigator.share` get the system share sheet, everything else copies the link ("Copied ✓" for 2 s; `prompt()` if the clipboard is blocked). Close button, its handler and CSS removed; on phones tapping the open song again folds the player. `test_app.py` asserts the new button and no `player-close`.
+- Verified: 104 tests; headless Chrome over raw CDP on the real catalog: desktop copy + label reset + clipboard content + the link reopens the song; phone (390px, stubbed `navigator.share`) share args and re-tap folding; screenshots checked.
+- NOT verified: the real Android/iOS share sheet; the clipboard and share APIs need https (localhost and Railway are fine), plain http would fall back to the `prompt()`.
+- Known limit: WhatsApp-style link previews show the artist, not the song (the server never sees `#…`); per-song previews need a server route with song-specific OG tags — not built.
+
 ## 2026-11-14 — Admin sign-in, PDF buttons and `pdf_sync.py` built; real upload still to do
 - Changed: schema v4 (`songs.score_key/tab_key`, empty), `/admin` password login (ENV `ADMIN_PASSWORD`, 7-day session renewed only by `/admin/session` and `/pdf`), `/pdf/<song_id>/<sheet|tab>` → 5-min R2 presigned URL, `storage.py` (boto3), lock/document buttons in the player, search results now close after a same-page click. Plan: `.claude/plans/pdf-upload.md`.
 - Settled with the developer: private bucket `bouzouki-rebetiko` (no public URL, no custom domain), push to `master` freely, DB edited locally then committed. Folders and DB artists match 79/79.
@@ -44,7 +50,7 @@ Entry template (copy it, keep the "NOT verified" line — write "nothing" if so)
 - Changed: site name **Bouzouki Rebetico** everywhere (spelling as requested; hero copy still says "Rebetiko"); header is one big line, no icon; favicon set (now the pick photo, see top entry; hero keeps `logo.svg`); `main.py` dev log shows pages and errors only, gunicorn access log removed.
 - Verified: pytest (39); screenshots desktop/mobile; dev log content; embeds that say "unavailable" on http://localhost DO play from an https origin.
 - NOT verified: videos on the real Railway https domain; browser tabs showing the new favicon (cache).
-- Also: `cryptography` (dev dep) + `main.py --https`; verified the previously "unavailable" original plays on https://localhost. Phone artist page: list first, player opens under the tapped song (tap again/Close folds it, stops playback); desktop unchanged.
+- Also: `cryptography` (dev dep) + `main.py --https`; verified the previously "unavailable" original plays on https://localhost. Phone artist page: list first, player opens under the tapped song (tap again folds it, stops playback); desktop unchanged.
 - Also: local https removed (slow); WebP thumbnails (home 9.9 MB → 1.6 MB); 5 artist cards per row; static URLs versioned + 1-year cache in prod; players use the YouTube iframe API (CSP allows https://www.youtube.com scripts) and show a fallback card on error 150.
 - Also: artist page = wide grid (song column + one big tabbed video: lesson default, choice remembered; no inner scrollbar); favicon = flat white bouzouki on the blue tile (alternatives B monogram / C plectrum were offered, not kept).
 - Next: after the Railway deploy, check which videos still show the fallback card (those are region/owner blocks).

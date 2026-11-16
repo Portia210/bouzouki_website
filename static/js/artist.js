@@ -251,10 +251,30 @@
         if (!wide.matches) bringIntoView(row, true);
     });
 
-    byId("player-close").addEventListener("click", function () {
+    // ---- share ----------------------------------------------------------------------
+    // The link is the page itself plus #song-slug, which this script already opens. Phones get the
+    // system share sheet (WhatsApp etc.); on wide screens the OS dialog is clumsy, so the link is copied.
+    var shareBtn = byId("player-share");
+    var shareText = shareBtn.querySelector("span");
+    var shareTimer = null;
+
+    function shareNote(text) {
+        shareText.textContent = text;
+        clearTimeout(shareTimer);
+        shareTimer = setTimeout(function () { shareText.textContent = "Share"; }, 2000);
+    }
+
+    shareBtn.addEventListener("click", function () {
         var row = current();
-        close();
-        if (row) bringIntoView(row, true);
+        if (!row) return;
+        var url = location.origin + location.pathname + "#" + encodeURIComponent(row.dataset.slug);
+        var title = row.dataset.title + " — " + list.dataset.artistName;
+        if (navigator.share && !wide.matches) {
+            navigator.share({ title: title, url: url }).catch(function () { /* cancelled */ });
+            return;
+        }
+        var copied = navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject();
+        copied.then(function () { shareNote("Copied ✓"); }, function () { window.prompt("Copy this link:", url); });
     });
 
     tabs.forEach(function (t) {

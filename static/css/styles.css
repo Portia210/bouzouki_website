@@ -250,7 +250,11 @@ a { text-underline-offset: 3px; }
     .player-panel { position: sticky; top: 5.5rem; padding: 1.25rem; scroll-margin-top: 6rem; }
 }
 .player-top { display: flex; align-items: flex-start; justify-content: space-between; gap: .75rem; }
-.player-close { flex: none; border: 1px solid var(--line); color: var(--muted); background: var(--bg); }
+.player-share {
+    flex: none; display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .8rem; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--bg); color: var(--muted); font-size: .85rem; font-weight: 650;
+}
+.player-share:hover { color: var(--ink); border-color: var(--accent); }
 .song-list li > .player-panel { margin: .5rem 0 .75rem; }
 .player-title { font-size: 1.3rem; font-weight: 700; margin: 0; }
 .player-title-gr { font-size: 1rem; margin: 0 0 .75rem; }

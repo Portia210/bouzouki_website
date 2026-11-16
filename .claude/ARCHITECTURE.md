@@ -11,7 +11,7 @@ Pages are Jinja2 + Bootstrap 5.3 (served locally, no CDN) + small vanilla JS fil
 
 ## Request / data flow
 - `GET /` → artists sorted by song count → `index.html`
-- `GET /artist/<slug>#<song slug>` → dict lookup in `Catalog`; one shared player (`static/js/artist.js`) is driven by the list/hash. Old `/artist/<en_name>` 301 to the slug
+- `GET /artist/<slug>#<song slug>` → dict lookup in `Catalog`; one shared player (`static/js/artist.js`) is driven by the list/hash; its Share button copies (or, on phones, shares) that `#song-slug` link. Old `/artist/<en_name>` 301 to the slug
 - `GET /song/<slug or old en_name>` → 301 to `/artist/<artist slug>#<song slug>` (songs have no page of their own)
 - `GET /search?term=&artist=&limit=` → `SearchIndex.search` → JSON list (artists then songs)
 - `GET /find?q=` → same index, HTML results page (no-JS / no-match fallback; the search box opens the best match directly)
