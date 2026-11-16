@@ -33,7 +33,7 @@
     <ul class="song-list">
         {% for song in songs %}
         <li>
-            <a class="song-row" href="{{ url_for('artist_songs', slug=song.artist.slug, _anchor=song.slug) }}">
+            <a class="song-row" href="{{ url_for('view_song', slug=song.slug) }}">
                 <span class="song-title">{{ song.en_name }}<small>{{ song.gr_name }} · {{ song.artist.en_name }}</small></span>
                 <span class="song-go" aria-hidden="true">→</span>
             </a>

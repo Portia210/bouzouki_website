@@ -73,8 +73,7 @@
             else if (e.key === "ArrowUp") { e.preventDefault(); highlight((active - 1 + items.length) % items.length); }
         });
         // Enter / Search button opens the best match straight away; /find is only the no-JS and no-match fallback.
-        // The results sit inside the form, and a link to the page you are already on only changes the #hash
-        // (no reload), so they must be closed here or they would stay open over the song.
+        // The results sit inside the form; close them before leaving so they never stay open over the next page.
         form.addEventListener("submit", function (e) {
             if (!list.hidden && items.length && input.value.trim().length >= 2) {
                 e.preventDefault();

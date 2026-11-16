@@ -7,7 +7,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Bouzouki Rebetico{% endblock %}</title>
     <meta name="description" content="{% block description %}Rebetiko songs with the original recording and a bouzouki sheet-music lesson for each. Search in Greek or in any spelling of the transliteration.{% endblock %}">
+    {% block canonical %}{% endblock %}
     <meta property="og:title" content="{{ self.title() }}">
+    <meta property="og:description" content="{{ self.description() }}">
     <meta property="og:type" content="website">
     {# Under ~300px wide chat apps (WhatsApp) show a small thumbnail beside the text; the 512px icon became a full-width card. #}
     <meta property="og:image" content="{{ url_for('static', filename='img/icon-192.png', _external=True) }}">

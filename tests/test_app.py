@@ -18,11 +18,30 @@ def test_pages_render(client, catalog):
     assert html.index('id="song-list"') < html.index('id="player-panel"')
 
 
-def test_song_url_redirects_to_artist_page_opened_on_that_song(client, catalog):
+def test_song_page_is_the_artist_page_opened_on_that_song(client, catalog):
     song = catalog.song_by_slug["alaniaris"]
     r = client.get("/song/alaniaris")
-    assert r.status_code == 301
-    assert r.headers["Location"].endswith(f"/artist/{song.artist.slug}#alaniaris")
+    assert r.status_code == 200
+    html = r.get_data(as_text=True)
+    # what a link preview or a search engine reads is about the song, not just the artist
+    assert "<title>Alaniaris — Vamvakaris Markos — Bouzouki Rebetico</title>" in html
+    assert 'rel="canonical" href="http://localhost/song/alaniaris"' in html
+    assert 'property="og:url" content="http://localhost/song/alaniaris"' in html
+    assert 'property="og:title" content="Alaniaris — Vamvakaris Markos' in html
+    assert "Alaniaris (αλανιαρης) by Vamvakaris Markos" in html and 'property="og:description"' in html
+    # the whole list is there too, with the song marked and every row linking to its own page
+    assert html.count('aria-current="true"') == 1
+    assert re.search(r'href="/song/alaniaris"[^>]*aria-current="true"', html)
+    assert f'<h2 class="player-title" id="player-title">{song.en_name}</h2>' in html
+    assert f'data-artist-url="/artist/{song.artist.slug}"' in html
+
+
+def test_artist_page_has_no_open_song_and_its_own_canonical(client, catalog):
+    artist = catalog.artists[0]
+    html = client.get(f"/artist/{artist.slug}").get_data(as_text=True)
+    assert 'aria-current="true"' not in html
+    assert f'rel="canonical" href="http://localhost/artist/{artist.slug}"' in html
+    assert f'href="/song/{artist.songs[0].slug}"' in html and "#" + artist.songs[0].slug not in html
 
 
 def test_every_artist_has_songs_and_slugs_are_short_and_unique(catalog):
@@ -35,13 +54,17 @@ def test_every_artist_has_songs_and_slugs_are_short_and_unique(catalog):
 def test_duplicate_titles_are_both_reachable(client, catalog):
     pyretos = [s for s in catalog.songs if s.en_name == "Pyretos"]
     assert len(pyretos) == 2
-    targets = {client.get(f"/song/{s.slug}").headers["Location"] for s in pyretos}
-    assert len(targets) == 2  # each lands on its own artist page / anchor
+    titles = set()
+    for s in pyretos:
+        r = client.get(f"/song/{s.slug}")
+        assert r.status_code == 200
+        titles.add(re.search(r"<title>(.*?)</title>", r.get_data(as_text=True)).group(1))
+    assert len(titles) == 2  # each opens on its own artist
 
 
 def test_legacy_name_urls_redirect_permanently(client):
     r = client.get("/song/Alaniaris")
-    assert r.status_code == 301 and r.headers["Location"].endswith("#alaniaris")
+    assert r.status_code == 301 and r.headers["Location"].endswith("/song/alaniaris")
     r = client.get("/artist/Vamvakaris%20Markos")
     assert r.status_code == 301 and r.headers["Location"].endswith("/artist/vamvakaris-markos")
 
@@ -56,7 +79,7 @@ def test_search_api(client):
     data = client.get("/search?term=mou").get_json()
     assert data and {"type", "slug", "label", "label_gr", "sub", "url"} <= data[0].keys()
     song = next(r for r in data if r["type"] == "song")
-    assert song["url"] == f"/artist/{client.application.extensions['catalog'].song_by_slug[song['slug']].artist.slug}#{song['slug']}"
+    assert song["url"] == f"/song/{song['slug']}"
     assert client.get("/search?term=").get_json() == []
     assert client.get("/search?term=" + "a" * 200).get_json() == []
     assert client.get("/search?term=mou&artist=unknown").get_json() == []
@@ -95,7 +118,8 @@ def test_healthz_robots_sitemap(client, catalog):
     assert client.get("/healthz").data == b"ok"
     assert b"Sitemap:" in client.get("/robots.txt").data
     sitemap = client.get("/sitemap.xml").get_data(as_text=True)
-    assert sitemap.count("<url>") == 1 + len(catalog.artists)  # songs live on artist pages
+    assert sitemap.count("<url>") == 1 + len(catalog.artists) + len(catalog.songs)
+    assert "/song/alaniaris</loc>" in sitemap
 
 
 def test_favicon_and_manifest(client):

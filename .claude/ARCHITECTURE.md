@@ -11,14 +11,14 @@ Pages are Jinja2 + Bootstrap 5.3 (served locally, no CDN) + small vanilla JS fil
 
 ## Request / data flow
 - `GET /` → artists sorted by song count → `index.html`
-- `GET /artist/<slug>#<song slug>` → dict lookup in `Catalog`; one shared player (`static/js/artist.js`) is driven by the list/hash; its Share button copies (or, on phones, shares) that `#song-slug` link. Old `/artist/<en_name>` 301 to the slug
-- `GET /song/<slug or old en_name>` → 301 to `/artist/<artist slug>#<song slug>` (songs have no page of their own)
+- `GET /artist/<slug>` → dict lookup in `Catalog`; `artist_songs.html` with the list and one shared player (`static/js/artist.js`); nothing open on phones, first song in the side player on wide screens. Old `/artist/<en_name>` 301 to the slug
+- `GET /song/<slug>` → the same template with `song` set: that row is `aria-current`, and title, description, canonical and `og:*` are the song's. Clicking another row swaps the player and rewrites the URL with `replaceState` (no reload, no extra Back steps); folding the player on a phone restores `/artist/<slug>`. Old `/artist/x#<song slug>` links are upgraded to `/song/<slug>` by `artist.js`; old `/song/<English name>` 301 to `/song/<slug>`. The Share button copies (phones: shares) the `/song/<slug>` URL
 - `GET /search?term=&artist=&limit=` → `SearchIndex.search` → JSON list (artists then songs)
 - `GET /find?q=` → same index, HTML results page (no-JS / no-match fallback; the search box opens the best match directly)
 - `GET /images/<artist slug>` → BLOB from DB on demand, `lru_cache`d, ETag + 7-day cache
 - `GET/POST /admin` (password-only sign-in, `?next=` same-site paths only), `POST /admin/logout`, `GET /admin/session` → `{admin: bool}` (no-store). Session = signed cookie, 7 days since the last visit. No `ADMIN_PASSWORD` → all admin/PDF routes 404 and no PDF buttons are rendered
 - `GET /pdf/<song_id>/<sheet|tab>` → not admin: 302 to `/admin?next=…` (before any lookup); admin: 302 to a 5-minute R2 presigned URL (inline, filename from the *current* names); no key → 404; R2 env missing → 503. The artist page shows it inside the player (iframe `#pdf-frame` replaces the video; "Open in new tab" beside it), so CSP `frame-src` allows `'self'` (the `/pdf` hop) and `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com` (added only when that env var is a 32-hex id)
-- `/healthz`, `/robots.txt`, `/sitemap.xml`
+- `/healthz`, `/robots.txt`, `/sitemap.xml` (home + every artist + every song)
 
 ## Data model (schema version 4, `PRAGMA user_version`)
 | Entity | Table | Key relations | Owner module |

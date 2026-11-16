@@ -1,11 +1,14 @@
 {% extends 'base.html' %}
 {% from '_macros.html' import avatar %}
 
-{% block title %}{{ artist.en_name }} — Bouzouki Rebetico{% endblock %}
-{% block description %}{{ artist.number_of_songs }} songs by {{ artist.en_name }} ({{ artist.gr_name }}) with the original recording and a bouzouki sheet-music lesson.{% endblock %}
+{% block title %}{% if song %}{{ song.en_name }} — {% endif %}{{ artist.en_name }} — Bouzouki Rebetico{% endblock %}
+{% block description %}{% if song %}{{ song.en_name }} ({{ song.gr_name }}) by {{ artist.en_name }}: the original recording and a bouzouki sheet-music lesson.{% else %}{{ artist.number_of_songs }} songs by {{ artist.en_name }} ({{ artist.gr_name }}) with the original recording and a bouzouki sheet-music lesson.{% endif %}{% endblock %}
+{% block canonical %}{% set page_url = url_for('view_song', slug=song.slug, _external=True) if song else url_for('artist_songs', slug=artist.slug, _external=True) %}
+    <link rel="canonical" href="{{ page_url }}">
+    <meta property="og:url" content="{{ page_url }}">{% endblock %}
 
 {% block content %}
-{% set first = artist.songs[0] %}
+{% set first = song or artist.songs[0] %}
 <section class="page-hero">
     <div class="container-xxl d-flex align-items-center gap-3 gap-md-4">
         {{ avatar(artist, large=True) }}
@@ -31,16 +34,17 @@
             <p class="filter-count" id="filter-count" hidden aria-live="polite"></p>
             {% endif %}
             <p class="list-hint d-md-none">Tap a song to open its videos right below it.</p>
-            <ul class="song-list" id="song-list" data-artist-name="{{ artist.en_name }}">
-                {% for song in artist.songs %}
-                <li data-slug="{{ song.slug }}">
-                    <a class="song-row" href="{{ url_for('artist_songs', slug=artist.slug, _anchor=song.slug) }}"
-                        data-slug="{{ song.slug }}" data-original="{{ song.video_id }}" data-lesson="{{ song.demo_id }}"
-                        data-title="{{ song.en_name }}" data-title-gr="{{ song.gr_name }}"
-                        data-query="{{ song.gr_name ~ ' ' ~ artist.gr_name }}"
-                        {%- if admin_enabled and song.score_key %} data-sheet="{{ url_for('pdf', song_id=song.song_id, kind='sheet') }}"{% endif %}
-                        {%- if admin_enabled and song.tab_key %} data-tab-pdf="{{ url_for('pdf', song_id=song.song_id, kind='tab') }}"{% endif %}>
-                        <span class="song-title">{{ song.en_name }}<small>{{ song.gr_name }}</small></span>
+            <ul class="song-list" id="song-list" data-artist-name="{{ artist.en_name }}" data-artist-url="{{ url_for('artist_songs', slug=artist.slug) }}">
+                {% for s in artist.songs %}
+                <li data-slug="{{ s.slug }}">
+                    <a class="song-row" href="{{ url_for('view_song', slug=s.slug) }}"
+                        data-slug="{{ s.slug }}" data-original="{{ s.video_id }}" data-lesson="{{ s.demo_id }}"
+                        data-title="{{ s.en_name }}" data-title-gr="{{ s.gr_name }}"
+                        data-query="{{ s.gr_name ~ ' ' ~ artist.gr_name }}"
+                        {%- if song and s.slug == song.slug %} aria-current="true"{% endif %}
+                        {%- if admin_enabled and s.score_key %} data-sheet="{{ url_for('pdf', song_id=s.song_id, kind='sheet') }}"{% endif %}
+                        {%- if admin_enabled and s.tab_key %} data-tab-pdf="{{ url_for('pdf', song_id=s.song_id, kind='tab') }}"{% endif %}>
+                        <span class="song-title">{{ s.en_name }}<small>{{ s.gr_name }}</small></span>
                         <span class="song-go" aria-hidden="true">→</span>
                     </a>
                 </li>

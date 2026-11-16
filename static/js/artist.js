@@ -1,5 +1,5 @@
-// Artist page: the song list drives one shared player. A click, a #song-slug in the URL
-// (from search results) or a hash change loads that song; there are no per-song pages.
+// Artist page: the song list drives one shared player. /song/<slug> is served with that song already
+// marked; a click swaps the song in place and rewrites the URL to that song's page (no reload).
 (function () {
     var wide = window.matchMedia("(min-width: 768px)");
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -17,6 +17,7 @@
 
     function byId(id) { return document.getElementById(id); }
     function current() { return list.querySelector('.song-row[aria-current="true"]'); }
+    function songPath(row) { return row.getAttribute("href"); }  // /song/<slug>: the song's own page
 
     // ---- YouTube players ------------------------------------------------------------
     // The iframe API tells us when a video can't be played for this viewer (region block,
@@ -161,7 +162,7 @@
             link.hidden = !url;
             if (!url) return;
             any = true;
-            link.href = isAdmin ? url : "/admin?next=" + encodeURIComponent(location.pathname + "#" + row.dataset.slug);
+            link.href = isAdmin ? url : "/admin?next=" + encodeURIComponent(songPath(row));
             // Phones show PDFs badly inside a page, so there the button simply opens a new tab.
             var inPage = isAdmin && wide.matches;
             if (inPage || !isAdmin) link.removeAttribute("target"); else link.target = "_blank";
@@ -221,10 +222,11 @@
         rows.forEach(function (r) { r.removeAttribute("aria-current"); });
         stopVideos();
         document.title = baseTitle;
-        history.replaceState(null, "", location.pathname + location.search);
+        history.replaceState(null, "", list.dataset.artistUrl);  // nothing open: back to the artist's own URL
         place();
     }
 
+    // Old links were /artist/<slug>#<song slug>; the server never sees a hash, so it is upgraded to the song's URL here.
     function fromHash() {
         var slug = decodeURIComponent(location.hash.slice(1));
         return rows.filter(function (r) { return r.dataset.slug === slug; })[0];
@@ -238,16 +240,18 @@
         var row = fromHash();
         if (!row) return;
         select(row);
+        history.replaceState(null, "", songPath(row));
         bringIntoView(row, false);
     }
 
+    // replaceState, not pushState: browsing ten songs must not need ten Back presses to leave the artist.
     list.addEventListener("click", function (e) {
         var row = e.target.closest(".song-row");
         if (!row || e.metaKey || e.ctrlKey || e.shiftKey) return;
         e.preventDefault();
         if (!wide.matches && row.getAttribute("aria-current") === "true") { close(); return; }  // tap again = fold away
         select(row);
-        history.replaceState(null, "", "#" + row.dataset.slug);
+        history.replaceState(null, "", songPath(row));
         if (!wide.matches) bringIntoView(row, true);
     });
 
@@ -267,7 +271,7 @@
     shareBtn.addEventListener("click", function () {
         var row = current();
         if (!row) return;
-        var url = location.origin + location.pathname + "#" + encodeURIComponent(row.dataset.slug);
+        var url = location.origin + songPath(row);
         var title = row.dataset.title + " — " + list.dataset.artistName;
         if (navigator.share && !wide.matches) {
             navigator.share({ title: title, url: url }).catch(function () { /* cancelled */ });
@@ -292,7 +296,8 @@
     window.addEventListener("hashchange", applyHash);
 
     showTab(null);  // reflect the remembered tab even if no song is open yet (phones)
-    if (fromHash()) applyHash();
+    if (current()) { select(current()); bringIntoView(current(), false); }  // /song/<slug>: the server marked the row
+    else if (fromHash()) applyHash();
     else if (wide.matches && rows.length) select(rows[0], true);  // side player starts on the first song
     else place();
 

@@ -133,15 +133,18 @@ def create_app(db_file: str | Path | None = None, secret_key: str | None = None,
             if legacy:
                 return redirect(url_for("artist_songs", slug=legacy.slug), 301)
             abort(404)
-        return render_template("artist_songs.html", artist=artist)
+        return render_template("artist_songs.html", artist=artist, song=None)
 
     @app.route("/song/<slug>")
     def view_song(slug):
-        # Songs have no page of their own: the artist page opens on the song.
-        song = catalog.song_by_slug.get(slug) or catalog.song_by_name.get(slug)  # name = pre-slug URLs
-        if not song:
+        # The artist page, opened on this song (list + player; artist.js swaps songs without reloading).
+        song = catalog.song_by_slug.get(slug)
+        if song:
+            return render_template("artist_songs.html", artist=song.artist, song=song)
+        legacy = catalog.song_by_name.get(slug)  # pre-slug URLs used the English name
+        if not legacy:
             abort(404)
-        return redirect(url_for("artist_songs", slug=song.artist.slug, _anchor=song.slug), 301)
+        return redirect(url_for("view_song", slug=legacy.slug), 301)
 
     @app.route("/find")
     def find():
@@ -170,7 +173,7 @@ def create_app(db_file: str | Path | None = None, secret_key: str | None = None,
             for a in artists
         ] + [
             {"type": "song", "slug": s.slug, "label": s.en_name, "label_gr": s.gr_name,
-             "sub": s.artist.en_name, "url": url_for("artist_songs", slug=s.artist.slug, _anchor=s.slug)}
+             "sub": s.artist.en_name, "url": url_for("view_song", slug=s.slug)}
             for s in songs
         ]
         return jsonify(results)
@@ -292,6 +295,7 @@ def create_app(db_file: str | Path | None = None, secret_key: str | None = None,
     def sitemap():
         urls = [url_for("home", _external=True)]
         urls += [url_for("artist_songs", slug=a.slug, _external=True) for a in catalog.artists]
+        urls += [url_for("view_song", slug=s.slug, _external=True) for s in catalog.songs]
         body = "".join(f"<url><loc>{u}</loc></url>" for u in urls)
         return Response(
             f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{body}</urlset>',

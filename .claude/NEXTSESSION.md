@@ -6,11 +6,16 @@ keeps them). Standing rules go in CLAUDE.md or GOTCHAS.md, not here.
 
 Entry template (copy it, keep the "NOT verified" line — write "nothing" if so):
 
+## 2026-11-17 — A real page per song (`/song/<slug>`) + smaller link-preview image
+- Changed: `/song/<slug>` renders the artist page opened on that song (song-specific title/description/canonical/`og:url`/`og:description`); rows, `/search` JSON, `/find` and the sitemap (now 1 + artists + songs URLs) use it; `artist.js` swaps songs in place with `replaceState`, upgrades old `#slug` links, and restores `/artist/<slug>` when a phone folds the player. `og:image` is now `icon-192.png` (the 512px one made WhatsApp show a full-width card). Plan: `.claude/plans/song-pages.md`.
+- Verified: 105 tests; headless Chrome (raw CDP): song page loads on its song, click swaps without reload (same-document marker, history length unchanged) and rewrites the URL, Share copies the new URL, legacy `#hash` upgraded, search Enter lands on `/song/…`, phone panel sits under the row and a re-tap restores the artist URL.
+- NOT verified: the WhatsApp preview itself (needs the deployed URL; WhatsApp caches per URL, so re-test with a song that was never shared, or add `?v=2`); Google indexing of the 1048 new URLs. `/admin?next=` for the PDF locks now returns to `/song/<slug>` (logic unchanged, not clicked through here).
+
 ## 2026-11-17 — Share button in the player (replaces the phone-only Close button)
 - Changed: `#player-share` in the player header (all screens). Link = `location.origin + pathname + #song-slug` (the hash `artist.js` already opens). Phones with `navigator.share` get the system share sheet, everything else copies the link ("Copied ✓" for 2 s; `prompt()` if the clipboard is blocked). Close button, its handler and CSS removed; on phones tapping the open song again folds the player. `test_app.py` asserts the new button and no `player-close`.
 - Verified: 104 tests; headless Chrome over raw CDP on the real catalog: desktop copy + label reset + clipboard content + the link reopens the song; phone (390px, stubbed `navigator.share`) share args and re-tap folding; screenshots checked.
 - NOT verified: the real Android/iOS share sheet; the clipboard and share APIs need https (localhost and Railway are fine), plain http would fall back to the `prompt()`.
-- Known limit: WhatsApp-style link previews show the artist, not the song (the server never sees `#…`); per-song previews need a server route with song-specific OG tags — not built.
+- Link format: the Share link was `…#slug` here; the entry above replaced it with `/song/<slug>` (per-song previews).
 
 ## 2026-11-14 — Admin sign-in, PDF buttons and `pdf_sync.py` built; real upload still to do
 - Changed: schema v4 (`songs.score_key/tab_key`, empty), `/admin` password login (ENV `ADMIN_PASSWORD`, 7-day session renewed only by `/admin/session` and `/pdf`), `/pdf/<song_id>/<sheet|tab>` → 5-min R2 presigned URL, `storage.py` (boto3), lock/document buttons in the player, search results now close after a same-page click. Plan: `.claude/plans/pdf-upload.md`.
